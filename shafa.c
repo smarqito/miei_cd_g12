@@ -3,20 +3,20 @@
 #include <string.h>
 
 int main (int argc, char *argv[]) {
-    if (argc == 4 && strcmp(argv[2],'-m') == 0 ) {
-        if (strcmp(argv[3],'f') == 0 ) {
+    if (argc == 3 && strcmp(argv[1],"-m") == 0 ) {
+        if (strcmp(argv[2],"f") == 0 ) {
             // call module f
-
+            printf("I'm on \"-m f\"\n");
             // must output .rle file
             // @rle
-        } else if (strcmp(argv[3],'t') == 0) {
+        } else if (strcmp(argv[2],"t") == 0) {
             // call module t
-
+            printf("I'm on \"-m t\"\n");  
             // must output .cod file
             // @cod
-        } else if (strcmp(argv[3],'d') == 0 ) {
+        } else if (strcmp(argv[2],"d") == 0 ) {
             // call module d
-
+            printf("I'm on \"-m d\"\n");
             // must output .shaf file
             // @shaf
         } else {
