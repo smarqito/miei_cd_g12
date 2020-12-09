@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "./module_t/module_t.h"
 
 /*
  * Call this function:
@@ -74,12 +75,12 @@ int main(int argc, char *argv[])
                 break;
             case 't':
                 // call module t
-                printf("I'm on module: \"-m t\"\n");
+                moduloT(fileToOpen);
                 // must output .cod file
                 // @cod
                 break;
             default:
-                print("Reveja o comando inserido.\n");
+                printf("Reveja o comando inserido.\n");
                 break;
             }
         }

@@ -27,4 +27,7 @@ typedef struct ValoresGrupo {
  */
 char *seekFromFile (FILE *fp, char divider);
 
+
+int moduloT (char *fileName);
+
 #endif

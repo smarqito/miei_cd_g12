@@ -7,8 +7,9 @@ void showAsciiFreq(AsciiFreq tabFreq)
 {
     if (tabFreq)
     {
-        printf("Simbolo: %c, freq: %d\n", tabFreq->ascii_valor, tabFreq->ascii_freq);
+        printf("Simbolo: %c\nFrequência: %d\n", tabFreq->ascii_valor, tabFreq->ascii_freq);
         printf("Representa: %s\n", tabFreq->representa);
+        printf("-----\n");
         showAsciiFreq(tabFreq->prox);
     }
 }
@@ -61,7 +62,7 @@ valoresGrupo divideStruct (AsciiFreq sfreq, int totalSimbolos) {
         } else {
             break;
         }
-    } 
+    }
 
     valores.nElementos = e;
     valores.nSimbolos = contador;
@@ -89,11 +90,11 @@ void encode (AsciiFreq sfreq, int div, int totalSimbolos) {
         pt = representa(sfreq,'0',d.nElementos);
         encode(sfreq, d.nElementos, d.nSimbolos);
         representa(pt,'1',div - d.nElementos);
-        encode(pt,div-d.nElementos,d.nSimbolos);
+        encode(pt,div-d.nElementos,totalSimbolos-d.nSimbolos);
     }
 }
 
-int main()
+int moduloT (char *fileName)
 {
     int i;
     int symbolFreq;
@@ -102,15 +103,11 @@ int main()
     int simbolosNaoNulos = 0;
     AsciiFreq tabFreq = NULL;
     rle = size = 0;
-    FILE *fp = fopen("test.txt", "r");
-    printf("%c", fgetc(fp));
+    FILE *fp = fopen(fileName, "r");
+    fseek(fp,1,1); //avança um byte no ficheiro ('@)
     rle = seekFromFile(fp, '@')[0] == 'R' ? 1 : 0;
     nBlocos = atoi(seekFromFile(fp, '@'));
     size = atoi(seekFromFile(fp, '@'));
-
-    printf("rle? %d\n", rle);
-    printf("nBlocos : %d\n", nBlocos);
-    printf("size : %d\n", size);
     // está na posição @<R|N>@[*]@[*]@fp
     if (!rle)
     {
@@ -125,8 +122,9 @@ int main()
             }
         }
         encode(tabFreq, simbolosNaoNulos, size);
-        printf("nº elementos: %d\n", divideStruct(tabFreq, size));
+        printf("::::::::::::::::::::::::::::::\n");
         showAsciiFreq(tabFreq);
+        printf("::::::::::::::::::::::::::::::\n");
     }
     else
     {
