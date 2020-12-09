@@ -40,7 +40,7 @@ char *seekFromFile(FILE *fp, char divider)
 {
     int i;
     char *temp = malloc(50 * sizeof(char)), t;
-    for (i = 0; (t = fgetc(fp)) != divider; i++)
+    for (i = 0; (t = fgetc(fp)) != EOF && t != divider && i<49; i++)
     {
         temp[i] = t;
     }
@@ -100,31 +100,38 @@ int moduloT (char *fileName)
     int symbolFreq;
     char t;
     int rle, nBlocos, size;
-    int simbolosNaoNulos = 0;
-    AsciiFreq tabFreq = NULL;
+    int simbolosNaoNulos;
+    AsciiFreq tabFreq;
     rle = size = 0;
     FILE *fp = fopen(fileName, "r");
     fseek(fp,1,1); //avança um byte no ficheiro ('@)
     rle = seekFromFile(fp, '@')[0] == 'R' ? 1 : 0;
     nBlocos = atoi(seekFromFile(fp, '@'));
-    size = atoi(seekFromFile(fp, '@'));
+    // fseek(fp,1,-1);
     // está na posição @<R|N>@[*]@[*]@fp
     if (!rle)
     {
-        for (i = 0; i < 256; i++)
-        {
-            symbolFreq = atoi(seekFromFile(fp, ';'));
-            if (symbolFreq)
-            {   
-                simbolosNaoNulos++;
-                tabFreq = snoc(tabFreq, i, symbolFreq);
-                // printf("indice %c valor %d\n", i, symbolFreq);
+        while(nBlocos > 0) {
+            tabFreq = NULL;
+            simbolosNaoNulos = 0;
+            size = atoi(seekFromFile(fp, '@'));
+            for (i = 0; i < 255; i++)
+            {
+                symbolFreq = atoi(seekFromFile(fp, ';'));
+                if (symbolFreq)
+                {   
+                    simbolosNaoNulos++;
+                    tabFreq = snoc(tabFreq, i, symbolFreq);
+                    // printf("indice %c valor %d\n", i, symbolFreq);
+                }
             }
+            seekFromFile(fp,'@');
+            encode(tabFreq, simbolosNaoNulos, size);
+            printf("::::::::::::::::::::::::::::::\n");
+            showAsciiFreq(tabFreq);
+            printf("::::::::::::::::::::::::::::::\n");
+            nBlocos--;
         }
-        encode(tabFreq, simbolosNaoNulos, size);
-        printf("::::::::::::::::::::::::::::::\n");
-        showAsciiFreq(tabFreq);
-        printf("::::::::::::::::::::::::::::::\n");
     }
     else
     {
