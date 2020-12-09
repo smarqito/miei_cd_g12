@@ -57,10 +57,7 @@ void trim (struct blockList* head){
 } Testing stuff*/
 
 void *moduleF(char bSize, int forceRLE, char *filename){
-    printf("Inside Module F\n");
     unsigned long blockSize;
-    unsigned long last_Block_Size = 0;
-    FILE *file = fopen(filename, "r");
 
     switch(bSize){  //Handle block size input
         case 'K':
@@ -77,14 +74,16 @@ void *moduleF(char bSize, int forceRLE, char *filename){
             break;
     }
 
+    // Main Vars
+    unsigned long last_Block_Size = 0;
+    FILE *file = fopen(filename, "r");
     long long n_blocks = fsize(NULL, filename, &blockSize, &last_Block_Size);
-    printf("%lli\n", n_blocks);
-
     struct blockList* head =  (struct blockList*)malloc(sizeof(struct blockList));
     char c = fgetc(file);
     int bCount = 1;
     int sCount = 1;
 
+    
     if (c != feof(file)){
         head->blockNum = bCount;
         head->symbol = c;
