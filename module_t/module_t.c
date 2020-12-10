@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include "module_t.h"
 
@@ -12,6 +13,12 @@ void showAsciiFreq(AsciiFreq tabFreq)
         printf("-----\n");
         showAsciiFreq(tabFreq->prox);
     }
+}
+
+void swap (char v[], int s, int d) {
+    char temp = v[d];
+    v[d] = v[s];
+    v[s] = temp;
 }
 
 AsciiFreq snoc (AsciiFreq sfreq, int symbolID, int symbolFreq)
@@ -38,14 +45,26 @@ AsciiFreq snoc (AsciiFreq sfreq, int symbolID, int symbolFreq)
 
 char *seekFromFile(FILE *fp, char divider)
 {
-    int i;
-    char *temp = malloc(50 * sizeof(char)), t;
-    for (i = 0; (t = fgetc(fp)) != EOF && t != divider && i<49; i++)
+    int i, size = 1;
+    char *buffer = malloc(sizeof(char)), t; // 
+    buffer[0] = '\0';
+    for (i = 0; !feof(fp) && (t = fgetc(fp)) != divider ; i++)
     {
-        temp[i] = t;
+        if(i<(size-1)) {
+            buffer[i] = t;
+        } else {
+            char *tmp = malloc(2*size*sizeof(char));
+            size *= 2;
+            strcpy(tmp,buffer);
+            free(buffer);
+            buffer = tmp;
+            swap(buffer,i,i+1);
+            tmp[i] = t;
+            // free(buffer);
+            
+        }
     }
-    temp[i] = '\0';
-    return temp;
+    return buffer;
 }
 
 valoresGrupo divideStruct (AsciiFreq sfreq, int totalSimbolos) {
@@ -107,7 +126,7 @@ int moduloT (char *fileName)
     fseek(fp,1,1); //avança um byte no ficheiro ('@)
     rle = seekFromFile(fp, '@')[0] == 'R' ? 1 : 0;
     nBlocos = atoi(seekFromFile(fp, '@'));
-    // fseek(fp,1,-1);
+    fseek(fp,1,-1);
     // está na posição @<R|N>@[*]@[*]@fp
     if (!rle)
     {
@@ -127,7 +146,6 @@ int moduloT (char *fileName)
             }
             seekFromFile(fp,'@');
             encode(tabFreq, simbolosNaoNulos, size);
-            printf("::::::::::::::::::::::::::::::\n");
             showAsciiFreq(tabFreq);
             printf("::::::::::::::::::::::::::::::\n");
             nBlocos--;
@@ -138,5 +156,7 @@ int moduloT (char *fileName)
         //outra merda
     }
     fclose(fp);
-    return 1;
+    return 0;
 }
+
+// { 925498353, 966498266 }
