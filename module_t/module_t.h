@@ -10,7 +10,7 @@
 /**
  * @struct SAsciiFreq
  * @brief Informações sobre os símbolos no ficheiro
- *        Nodo -> sturct SAsciiFreq 
+ *        Nodo -> struct SAsciiFreq 
  */
 
 /**
