@@ -38,19 +38,17 @@ typedef struct ValoresGrupo {
  * @brief Função auxiliar para trocar a posição de 2 elementos 
  * 
  * @param v Array de inteiros 
- * @param s/d Inteiros cuja posição vai ser trocada 
+ * @param s Índice de origem 
+ * @param d Índice de destino 
  */
 void swap (char v[], int s, int d);
 
 /**
- * @brief Função que atualiza a lista ligada com a informação de um novo símbolo
- *        Atualiza os campos 'ascii_valor' e 'ascii_freq' para um determinado símbolo
- *        Inicia a string 'representa' com o caractér terminador de strings - '\0' (para depois ser trocado pelo código)
- *        Organiza a lista ligada de modo decrescente das frequências
+ * @brief Insere um novo símbolo por ordem decrescente das frequências
  * 
  * @param sfreq Apontador para a lista ligada
- * @param symbolID Inteiro com o o valor do símbolo lido em decimal (segundo a tabela ascii)
- * @param symbolFreq Inteiro com a frequência do símbolo 
+ * @param symbolID Valor do símbolo lido em decimal (segundo a tabela ascii)
+ * @param symbolFreq Frequência do símbolo 
  * 
  * @return sfreq Apontador para o ínicio da lista ligada (agora ordenada decrescentemente)    
  */
@@ -68,7 +66,6 @@ char *seekFromFile (FILE *fp, char divider);
 
 /**
  * @brief Função que calcula a menor divisão duma lista de frequências
- *        Com a lista ordenada (de modo decrescente) indica onde será feita a divisão
  * 
  * @param sfreq Apontador para a lista ligada
  * @param totalSimbolos Número total de símbolos neste ficheiro(ou no bloco atual caso seja mais que 1) 
@@ -79,8 +76,7 @@ char *seekFromFile (FILE *fp, char divider);
 valoresGrupo divideStruct (AsciiFreq sfreq, int totalSimbolos);
 
 /**
- * @brief Função que coloca na em representa um determinado caractér
- *        Usada no 'encode' para calcular o código final de cada um dos símbolos 
+ * @brief Recebe um caractér e coloca-o na string representa 
  * 
  * @param sfreq Apontador para a lista ligada
  * @param valor Caractér que vai ser colocado na String 
@@ -92,7 +88,6 @@ AsciiFreq representa (AsciiFreq sfreq, char valor, int div);
 
 /**
  * @brief Função que cue calcula os códigos para cada símbolo
- *        Segue a codificação de Shannon-Fano
  * 
  * @param sfreq Apontador para a lista ligada
  * @param div Índice da representação da divisão
@@ -102,8 +97,6 @@ void encode (AsciiFreq sfreq, int div, int totalSimbolos);
 
 /**
  * @brief Percorre o ficheiro e calcula a representação de cada símbolo (para cada frequência)
- *        Considerando se tem 1 ou mais blocos 
- *        Coloca em representa (string) de cada lista ligada o respetivo código do símbolo
  * 
  * @param fileName Ficheiro do tipo .freq ou .rle.freq que vai ser lido 
  * 
