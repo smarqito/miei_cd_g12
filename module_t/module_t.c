@@ -113,24 +113,78 @@ void encode (AsciiFreq sfreq, int div, int totalSimbolos) {
     }
 }
 
+void ordenaLista(AsciiFreq *sfreq){
+    AsciiFreq ant, pt;
+    int auxS, auxF;
+    char *auxR; 
+
+    for(pt = *sfreq; pt; pt = pt->prox)
+        for(ant = (*sfreq)->prox; ant; ant = ant->prox)
+            if(ant->ascii_valor < pt->ascii_valor){
+                auxS = pt->ascii_valor;
+                pt->ascii_valor = ant->ascii_valor;
+                ant->ascii_valor = auxS;
+                auxF = pt->ascii_freq;
+                pt->ascii_freq = ant->ascii_freq;
+                ant->ascii_freq = auxF;
+                auxR = pt->representa;
+                strcpy(ant->representa, pt->representa);
+                strcpy(auxR, ant->representa);
+            }           
+}
+
+int escreverT (AsciiFreq sfreq, int rle, int nBlocos, char *filename){
+    int i = 0;
+    FILE *fp = fopen(filename,"w");
+
+    if(!rle){
+        AsciiFreq pt = sfreq;
+        ordenaLista(&pt);
+
+        fprintf(fp,"@N@%d", nBlocos);
+        
+        while(i < nBlocos){
+            fprintf(fp,"@%d@0", 2048);
+            for(int j = 0; j < 255; j++){
+                if(j == pt->ascii_valor && pt->prox == NULL)
+                    fprintf(fp, ";%s;0", pt->representa);
+                else if(j == pt->ascii_valor)
+                    fprintf(fp, ";%s", pt->representa);
+                else 
+                    fprintf(fp, ";");
+            }
+            i++;
+        }
+        fprintf(fp,"@0");
+
+    }else{
+            //para rle 
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+
 int moduloT (char *fileName)
 {
     int i;
     int symbolFreq;
     char t;
-    int rle, nBlocos, size;
+    int rle, nBlocos1,nBlocos2, size;
     int simbolosNaoNulos;
     AsciiFreq tabFreq;
     rle = size = 0;
     FILE *fp = fopen(fileName, "r");
     fseek(fp,1,1); //avança um byte no ficheiro ('@)
     rle = seekFromFile(fp, '@')[0] == 'R' ? 1 : 0;
-    nBlocos = atoi(seekFromFile(fp, '@'));
+    nBlocos1 = atoi(seekFromFile(fp, '@'));
+    nBlocos2 = nBlocos1;
     fseek(fp,1,-1);
     // está na posição @<R|N>@[*]@[*]@fp
     if (!rle)
     {
-        while(nBlocos > 0) {
+        while(nBlocos1 > 0) {
             tabFreq = NULL;
             simbolosNaoNulos = 0;
             size = atoi(seekFromFile(fp, '@'));
@@ -148,8 +202,9 @@ int moduloT (char *fileName)
             encode(tabFreq, simbolosNaoNulos, size);
             showAsciiFreq(tabFreq);
             printf("::::::::::::::::::::::::::::::\n");
-            nBlocos--;
+            nBlocos1--;
         }
+        escreverT(tabFreq, nBlocos2, 0, "teste.txt.cod");
     }
     else
     {
