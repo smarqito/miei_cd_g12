@@ -15,13 +15,14 @@ void showAsciiFreq(AsciiFreq tabFreq)
     }
 }
 
-void swap (char v[], int s, int d) {
+void swap(char v[], int s, int d)
+{
     char temp = v[d];
     v[d] = v[s];
     v[s] = temp;
 }
 
-AsciiFreq snoc (AsciiFreq sfreq, int symbolID, int symbolFreq)
+AsciiFreq snoc(AsciiFreq sfreq, int symbolID, int symbolFreq)
 {
     AsciiFreq *sitio, *ant = NULL;
     sitio = &sfreq;
@@ -46,39 +47,46 @@ AsciiFreq snoc (AsciiFreq sfreq, int symbolID, int symbolFreq)
 char *seekFromFile(FILE *fp, char divider)
 {
     int i, size = 1;
-    char *buffer = malloc(sizeof(char)), t; // 
+    char *buffer = malloc(sizeof(char)), t; //
     buffer[0] = '\0';
-    for (i = 0; !feof(fp) && (t = fgetc(fp)) != divider ; i++)
+    for (i = 0; !feof(fp) && (t = fgetc(fp)) != divider; i++)
     {
-        if(i<(size-1)) {
+        if (i < (size - 1))
+        {
             buffer[i] = t;
-        } else {
-            char *tmp = malloc(2*size*sizeof(char));
+        }
+        else
+        {
+            char *tmp = malloc(2 * size * sizeof(char));
             size *= 2;
-            strcpy(tmp,buffer);
+            strcpy(tmp, buffer);
             free(buffer);
             buffer = tmp;
-            swap(buffer,i,i+1);
+            swap(buffer, i, i + 1);
             tmp[i] = t;
             // free(buffer);
-            
         }
     }
     return buffer;
 }
 
-valoresGrupo divideStruct (AsciiFreq sfreq, int totalSimbolos) {
+valoresGrupo divideStruct(AsciiFreq sfreq, int totalSimbolos)
+{
     int contador = 0, e;
-    int min=INT_MAX, temp;
+    int min = INT_MAX, temp;
     AsciiFreq pt = NULL;
-    valoresGrupo valores;// = malloc(sizeof (valoresGrupo));
+    valoresGrupo valores; // = malloc(sizeof (valoresGrupo));
 
-    for(pt = sfreq, e=0; pt ; pt = pt->prox, e++) {
+    for (pt = sfreq, e = 0; pt; pt = pt->prox, e++)
+    {
         temp = abs(contador + pt->ascii_freq - (totalSimbolos / 2));
-        if(temp < min) {
+        if (temp < min)
+        {
             contador += pt->ascii_freq;
             min = temp;
-        } else {
+        }
+        else
+        {
             break;
         }
     }
@@ -88,39 +96,46 @@ valoresGrupo divideStruct (AsciiFreq sfreq, int totalSimbolos) {
     return valores;
 }
 
-AsciiFreq representa (AsciiFreq sfreq, char valor, int div) {
+AsciiFreq representa(AsciiFreq sfreq, char valor, int div)
+{
     AsciiFreq pt = sfreq;
     int i;
-    while(div>0) {
-        for(i = 0; pt->representa[i]; i++);
+    while (div > 0)
+    {
+        for (i = 0; pt->representa[i]; i++)
+            ;
         pt->representa[i] = valor;
-        pt->representa[i+1] = '\0';
+        pt->representa[i + 1] = '\0';
         pt = pt->prox;
         div--;
     }
     return pt;
 }
 
-void encode (AsciiFreq sfreq, int div, int totalSimbolos) {
+void encode(AsciiFreq sfreq, int div, int totalSimbolos)
+{
     valoresGrupo d;
     AsciiFreq pt;
-    if(div > 1) {
+    if (div > 1)
+    {
         d = divideStruct(sfreq, totalSimbolos);
-        pt = representa(sfreq,'0',d.nElementos);
+        pt = representa(sfreq, '0', d.nElementos);
         encode(sfreq, d.nElementos, d.nSimbolos);
-        representa(pt,'1',div - d.nElementos);
-        encode(pt,div-d.nElementos,totalSimbolos-d.nSimbolos);
+        representa(pt, '1', div - d.nElementos);
+        encode(pt, div - d.nElementos, totalSimbolos - d.nSimbolos);
     }
 }
 
-void ordenaLista(AsciiFreq *sfreq){
+void ordenaLista(AsciiFreq *sfreq)
+{
     AsciiFreq ant, pt;
     int auxS, auxF;
-    char *auxR; 
+    char *auxR;
 
-    for(pt = *sfreq; pt; pt = pt->prox)
-        for(ant = (*sfreq)->prox; ant; ant = ant->prox)
-            if(ant->ascii_valor < pt->ascii_valor){
+    for (pt = *sfreq; pt; pt = pt->prox)
+        for (ant = (*sfreq)->prox; ant; ant = ant->prox)
+            if (ant->ascii_valor < pt->ascii_valor)
+            {
                 auxS = pt->ascii_valor;
                 pt->ascii_valor = ant->ascii_valor;
                 ant->ascii_valor = auxS;
@@ -130,81 +145,136 @@ void ordenaLista(AsciiFreq *sfreq){
                 auxR = pt->representa;
                 strcpy(ant->representa, pt->representa);
                 strcpy(auxR, ant->representa);
-            }           
+            }
 }
 
-int escreverT (AsciiFreq sfreq, int rle, int nBlocos, char *filename){
-    int i = 0;
-    FILE *fp = fopen(filename,"w");
+char **listaAscii(AsciiFreq sfreq)
+{
+    char **ordenada;
+    int i;
+    ordenada = malloc(255 * sizeof(char *));
+    while (sfreq)
+    {
+        ordenada[sfreq->ascii_valor] = sfreq->representa;
+        sfreq = sfreq->prox;
+    }
+    return ordenada;
+}
 
-    if(!rle){
+int escreveFicheiro(AsciiFreq sfreq, int totalFrequencias, char *fileName)
+{
+    FILE *fp = fopen(fileName, "a");
+    int i, r = 0;
+    char **ordenada = listaAscii(sfreq);
+    if (fp)
+    {
+        fprintf(fp, "@%d@0", totalFrequencias);
+        for (i = 0; i < 255; i++)
+        {
+            // printf("%s", ordenada[i]);
+            ordenada[i] ? fprintf(fp, "%s%c", ordenada[i], ';')
+                        : fprintf(fp, "%c", ';');
+        }
+        r = 1;
+        fclose(fp);
+    }
+    return r;
+}
+
+int initFile(char *fileName, int rle,int nBlocos)
+{
+    FILE *fp = fopen(fileName, "w");
+    int r = 0;
+    if (fp)
+    {
+        fprintf(fp, "@%c@%d", rle ? 'R' : 'N', nBlocos);
+        fclose(fp);
+        r=1;
+    }
+    return r;
+}
+
+int escreverT(AsciiFreq sfreq, int rle, int nBlocos, char *filename)
+{
+    int i = 0;
+    FILE *fp = fopen(filename, "w");
+
+    if (!rle)
+    {
         AsciiFreq pt = sfreq;
         ordenaLista(&pt);
 
-        fprintf(fp,"@N@%d", nBlocos);
-        
-        while(i < nBlocos){
-            fprintf(fp,"@%d@0", 2048);
-            for(int j = 0; j < 255; j++){
-                if(j == pt->ascii_valor && pt->prox == NULL)
+        fprintf(fp, "@N@%d", nBlocos);
+
+        while (i < nBlocos)
+        {
+            fprintf(fp, "@%d@0", 2048);
+            for (int j = 0; j < 255; j++)
+            {
+                if (j == pt->ascii_valor && pt->prox == NULL)
                     fprintf(fp, ";%s;0", pt->representa);
-                else if(j == pt->ascii_valor)
+                else if (j == pt->ascii_valor)
                     fprintf(fp, ";%s", pt->representa);
-                else 
+                else
                     fprintf(fp, ";");
             }
             i++;
         }
-        fprintf(fp,"@0");
-
-    }else{
-            //para rle 
+        fprintf(fp, "@0");
+    }
+    else
+    {
+        //para rle
     }
 
     fclose(fp);
     return 0;
 }
 
-
-int moduloT (char *fileName)
+int moduloT(char *fileName)
 {
     int i;
     int symbolFreq;
     char t;
-    int rle, nBlocos1,nBlocos2, size;
-    int simbolosNaoNulos;
+    int rle, nBlocos, nBlocosInit, size;
+    int simbolosNaoNulos, totalFrequencias;
     AsciiFreq tabFreq;
     rle = size = 0;
     FILE *fp = fopen(fileName, "r");
-    fseek(fp,1,1); //avança um byte no ficheiro ('@)
+    fseek(fp, 1, 1); //avança um byte no ficheiro ('@)
     rle = seekFromFile(fp, '@')[0] == 'R' ? 1 : 0;
-    nBlocos1 = atoi(seekFromFile(fp, '@'));
-    nBlocos2 = nBlocos1;
-    fseek(fp,1,-1);
+    nBlocos = nBlocosInit = atoi(seekFromFile(fp, '@'));
+    fseek(fp, 1, -1);
     // está na posição @<R|N>@[*]@[*]@fp
     if (!rle)
     {
-        while(nBlocos1 > 0) {
+        while (nBlocos > 0)
+        {
             tabFreq = NULL;
             simbolosNaoNulos = 0;
             size = atoi(seekFromFile(fp, '@'));
-            for (i = 0; i < 255; i++)
+            for (i = 0, totalFrequencias = 0; i < 255; i++)
             {
                 symbolFreq = atoi(seekFromFile(fp, ';'));
                 if (symbolFreq)
-                {   
+                {
+                    totalFrequencias += symbolFreq;
                     simbolosNaoNulos++;
                     tabFreq = snoc(tabFreq, i, symbolFreq);
                     // printf("indice %c valor %d\n", i, symbolFreq);
                 }
             }
-            seekFromFile(fp,'@');
+            // printf("Total de frequencias: %d", totalFrequencias);
+            seekFromFile(fp, '@');
             encode(tabFreq, simbolosNaoNulos, size);
-            showAsciiFreq(tabFreq);
-            printf("::::::::::::::::::::::::::::::\n");
-            nBlocos1--;
+            // showAsciiFreq(tabFreq);
+            // printf("::::::::::::::::::::::::::::::\n");
+            if (nBlocosInit == nBlocos)
+                initFile("ficheiro.txt.cod", rle, nBlocosInit);
+            escreveFicheiro(tabFreq, totalFrequencias, "ficheiro.txt.cod");
+            nBlocos--;
         }
-        escreverT(tabFreq, nBlocos2, 0, "teste.txt.cod");
+        //escreverT(tabFreq, nBlocosInit, 0, "teste.txt.cod");
     }
     else
     {
