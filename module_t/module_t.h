@@ -96,6 +96,38 @@ AsciiFreq representa (AsciiFreq sfreq, char valor, int div);
 void encode (AsciiFreq sfreq, int div, int totalSimbolos);
 
 /**
+ * @brief Função que cria uma array de strings 
+ * 
+ * @param sfreq Apontador para a lista ligada
+ * 
+ * @return ordenada Array de strings 
+ */
+char **listaAscii(AsciiFreq sfreq);
+
+/**
+ * @brief Função que escreve o ficheiro .cod com as informações necessárias
+ * 
+ * @param sfreq Apontador para a lista ligada
+ * @param totalFrequencias Nº de elementos total num bloco  
+ * @param filename String com o nome do ficheiro .cod a ser criado
+ * 
+ * @return r 1 ou 0, caso tenha sido imprimido com sucesso no ficheiro a informaçao inicial 
+ */
+int escreveFicheiro(AsciiFreq sfreq, int totalFrequencias, char *fileName);
+
+/**
+ * @brief Imprime no ficheiro .cod as informações iniciais
+ *        Imprime se é ou não RLE e o nº de blocos
+ * 
+ * @param filename String com o nome do ficheiro .cod a ser criado 
+ * @param rle Inteiro que indica o tipo de ficheiro (RLE ou Não RLE)
+ * @param nBlocos Nº de blocos do ficheiro
+ * 
+ * @return r 1 ou 0, caso tenha sido imprimido com sucesso no ficheiro a informaçao inicial 
+ */
+int initFile(char *fileName, int rle, int nBlocos);
+
+/**
  * @brief Percorre o ficheiro e calcula a representação de cada símbolo (para cada frequência)
  * 
  * @param fileName Ficheiro do tipo .freq ou .rle.freq que vai ser lido 

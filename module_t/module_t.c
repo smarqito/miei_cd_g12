@@ -126,28 +126,6 @@ void encode(AsciiFreq sfreq, int div, int totalSimbolos)
     }
 }
 
-void ordenaLista(AsciiFreq *sfreq)
-{
-    AsciiFreq ant, pt;
-    int auxS, auxF;
-    char *auxR;
-
-    for (pt = *sfreq; pt; pt = pt->prox)
-        for (ant = (*sfreq)->prox; ant; ant = ant->prox)
-            if (ant->ascii_valor < pt->ascii_valor)
-            {
-                auxS = pt->ascii_valor;
-                pt->ascii_valor = ant->ascii_valor;
-                ant->ascii_valor = auxS;
-                auxF = pt->ascii_freq;
-                pt->ascii_freq = ant->ascii_freq;
-                ant->ascii_freq = auxF;
-                auxR = pt->representa;
-                strcpy(ant->representa, pt->representa);
-                strcpy(auxR, ant->representa);
-            }
-}
-
 char **listaAscii(AsciiFreq sfreq)
 {
     char **ordenada;
@@ -194,43 +172,6 @@ int initFile(char *fileName, int rle,int nBlocos)
     return r;
 }
 
-int escreverT(AsciiFreq sfreq, int rle, int nBlocos, char *filename)
-{
-    int i = 0;
-    FILE *fp = fopen(filename, "w");
-
-    if (!rle)
-    {
-        AsciiFreq pt = sfreq;
-        ordenaLista(&pt);
-
-        fprintf(fp, "@N@%d", nBlocos);
-
-        while (i < nBlocos)
-        {
-            fprintf(fp, "@%d@0", 2048);
-            for (int j = 0; j < 255; j++)
-            {
-                if (j == pt->ascii_valor && pt->prox == NULL)
-                    fprintf(fp, ";%s;0", pt->representa);
-                else if (j == pt->ascii_valor)
-                    fprintf(fp, ";%s", pt->representa);
-                else
-                    fprintf(fp, ";");
-            }
-            i++;
-        }
-        fprintf(fp, "@0");
-    }
-    else
-    {
-        //para rle
-    }
-
-    fclose(fp);
-    return 0;
-}
-
 int moduloT(char *fileName)
 {
     int i;
@@ -274,7 +215,6 @@ int moduloT(char *fileName)
             escreveFicheiro(tabFreq, totalFrequencias, "ficheiro.txt.cod");
             nBlocos--;
         }
-        //escreverT(tabFreq, nBlocosInit, 0, "teste.txt.cod");
     }
     else
     {
