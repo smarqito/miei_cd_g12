@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "module_f.h"
 #include "fsize.h"
+#include "SFCodes.h"
 
 // <Freq Stuff>
 
