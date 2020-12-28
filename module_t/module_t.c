@@ -131,8 +131,13 @@ char **listaAscii(AsciiFreq sfreq)
     char **ordenada;
     int i;
     ordenada = malloc(255 * sizeof(char *));
+    
+    for(i=0; i<255; i++) // inicializar a matriz a null
+        ordenada[i] = '\0';
+
     while (sfreq)
     {
+        printf("%c: ", sfreq->ascii_valor);
         ordenada[sfreq->ascii_valor] = sfreq->representa;
         sfreq = sfreq->prox;
     }
@@ -147,9 +152,8 @@ int escreveFicheiro(AsciiFreq sfreq, int totalFrequencias, char *fileName)
     if (fp)
     {
         fprintf(fp, "@%d@0", totalFrequencias);
-        for (i = 0; i < 255; i++)
+        for (i = 0; i < 254; i++)
         {
-            // printf("%s", ordenada[i]);
             ordenada[i] ? fprintf(fp, "%s%c", ordenada[i], ';')
                         : fprintf(fp, "%c", ';');
         }
@@ -209,9 +213,9 @@ int moduloT(char *fileName)
             seekFromFile(fp, '@');
             encode(tabFreq, simbolosNaoNulos, size);
             // showAsciiFreq(tabFreq);
-            // printf("::::::::::::::::::::::::::::::\n");
             if (nBlocosInit == nBlocos)
                 initFile("ficheiro.txt.cod", rle, nBlocosInit);
+            // printf("::::::::::::::: :::::::::::::::\n");
             escreveFicheiro(tabFreq, totalFrequencias, "ficheiro.txt.cod");
             nBlocos--;
         }
