@@ -2,65 +2,90 @@
 #include <stdlib.h>
 #include "module_f.h"
 #include "fsize.h"
+#include "SFCodes.h"
 
-// Start of Block stuff
+// <Freq Stuff>
 
-struct blockList {
-    int blockNum;
-    char symbol;
-    struct blockList* next;
-};
+void freqN (unsigned char* block, int blockNum, int blockSize, FILE *file){
+    int symbs[255] = {0};
 
-void insertList (int block, char symbol, struct blockList* head) {
-    struct blockList* new =  (struct blockList*)malloc(sizeof(struct blockList));
-    struct blockList* temp;
-    temp = head;
+    for (int i = 0; i < strlen(block); ++i)
+        symbs[block[i]]++;
 
-    new->blockNum = block;
-    new->symbol = symbol;
-    new->next = NULL;
+    fprintf(file, "@%d@", blockSize);
 
-    while(temp->next != NULL && temp != NULL)
-        temp = temp->next;
-
-    temp->next = new;
+    for (int i = 0; i < 255; i++) {
+        if (i == 0 || symbs[i] != symbs[i-1]) {
+            fprintf(file, "%d;", symbs[i]);
+        } else {
+            fprintf(file, ";");
+        }
+    }
 }
 
-void trim (struct blockList* head){
-    struct blockList *current, *prev;
+void freqR (FILE *file, FILE *RLE, int force, long long blockNum, unsigned long blockSize, unsigned long lastBlock){  //TODO THE CHECK IF RLE IS NOT FORCED
+    unsigned char current;
+    char check[2];
+    int count = 1, amount = 0;
+    int symbs[255] = {0};
 
-    current = head;
-    prev = head;
-
-    while(current->next != NULL) {  // Find End file symbol
-        prev = current;
-        current = current->next;
+    if (force == 1) {
+        fprintf(file, "@R@%lld", blockNum);
+    }
+    else {  //TODO CHECK IF RLE GETS USED
+        fprintf(file, "@N@%lld", blockNum);
     }
 
-    if(current == head) {
-        head = NULL;
-    } else {
-        prev->next = NULL;  // Delete end file symbol
+    fprintf(file, "@%ld@", blockSize);
+
+    fseek(RLE, 0, SEEK_SET);
+
+    for (int i = 1; i <= blockNum; ++i) {
+        //TODO SQUISH LAST BLOCK IF SMALLER THEN 1Kb
+
+        while (count <= blockSize) {
+            fread(&current, sizeof(char), 1, RLE);
+
+            if (current != '{'){
+                symbs[current]++;
+                count++;
+            } else {
+                fread(&check, sizeof(char), 2, RLE);
+                if (check[0] == '0' && check[1] == '}'){
+                    fseek(RLE, 1, SEEK_CUR);
+                    fread(&current, sizeof(char), 1, RLE);
+                    fseek(RLE, 2, SEEK_CUR);
+                    fscanf(RLE, "%d", &amount);
+                    fseek(RLE, 1, SEEK_CUR);
+
+                    symbs[current] += amount;
+                    if (current == '0') count += amount*3;
+                    else count += amount;
+                } else {
+                    fwrite("{", sizeof(char), 1, RLE);
+                    fseek(RLE, -2, SEEK_CUR);
+                    count++;
+                }
+            }
+        }
+
+        for (int i = 0; i < 255; i++)
+            if (i == 0 || symbs[i] != symbs[i-1]) {
+                fprintf(file, "%d;", symbs[i]);
+            } else {
+                fprintf(file, ";");
+            }
+
+        memset(symbs, 0, sizeof(symbs));
     }
 
-    free(current);  // Free Last symbol memory
+    fprintf(file, "@0");
 }
 
-//End of block stuff
+// </Freq Stuff>
 
-/*void printList(struct blockList* n)
-{
-    while (n != NULL) {
-        printf(" %c ", n->symbol);
-        n = n->next;
-    }
-} Testing stuff*/
-
-void *moduleF(char bSize, int forceRLE, char *filename){
-    printf("Inside Module F\n");
+void *moduleF(char bSize, int forceRLE, unsigned char *filename){
     unsigned long blockSize;
-    unsigned long last_Block_Size = 0;
-    FILE *file = fopen(filename, "r");
 
     switch(bSize){  //Handle block size input
         case 'K':
@@ -77,33 +102,53 @@ void *moduleF(char bSize, int forceRLE, char *filename){
             break;
     }
 
-    long long n_blocks = fsize(NULL, filename, &blockSize, &last_Block_Size);
-    printf("%lli\n", n_blocks);
+    FILE *file = fopen(filename, "rb");
 
-    struct blockList* head =  (struct blockList*)malloc(sizeof(struct blockList));
-    char c = fgetc(file);
-    int bCount = 1;
-    int sCount = 1;
+    if (file != NULL) {
+        // Main Vars
+        long last_Block_Size = 0;
+        long long n_blocks = fsize(NULL, filename, &blockSize, &last_Block_Size);
+        unsigned char c;
+        int bCount = 1;
+        int sCount = 1;
 
-    if (c != feof(file)){
-        head->blockNum = bCount;
-        head->symbol = c;
-        head->next = NULL;
-    }
+        char *newFileName = (char *) malloc(strlen(filename)+9);
+        strcpy(newFileName, filename);
+        strcat(newFileName, ".rle");
+        FILE *rleFile = fopen(newFileName, "wb+");
 
-    while (!(feof(file))){
-        c = fgetc(file);
+        strcpy(newFileName, filename);
+        strcat(newFileName, ".freq");
+        FILE *ogFreq = fopen(newFileName, "w");
 
-        if(bCount <= n_blocks && sCount < blockSize){
-            insertList(bCount, c, head);
-            sCount++;
-        } else {
-            insertList(++bCount, c, head);
-            sCount = 1;
+        strcpy(newFileName, filename);
+        strcat(newFileName, ".rle");
+        strcat(newFileName, ".freq");
+        FILE *rleFreq = fopen(newFileName, "w");
+
+        fprintf(ogFreq, "@N@%d", n_blocks);
+
+        for (int i = 1; i <= n_blocks; ++i) {
+            if (n_blocks == i)
+                blockSize = last_Block_Size;
+
+            unsigned char block[blockSize+1];
+            fread(&block, sizeof(char), blockSize, file);
+            block[blockSize] = '\0';
+
+            rle(rleFile, block);
+            freqN(block, i, blockSize, ogFreq);
         }
-    }
 
-    trim(head);
+        freqR(rleFreq, rleFile, forceRLE, n_blocks, blockSize, last_Block_Size);
 
-    // printList(head); Testing
+        fprintf(ogFreq, "@0");
+
+        fclose(ogFreq);
+        fclose(rleFile);
+        fclose(rleFreq);
+        fclose(file);
+
+    } else
+        printf("File not found");
 }
