@@ -137,7 +137,6 @@ char **listaAscii(AsciiFreq sfreq)
 
     while (sfreq)
     {
-        printf("%c: ", sfreq->ascii_valor);
         ordenada[sfreq->ascii_valor] = sfreq->representa;
         sfreq = sfreq->prox;
     }
@@ -176,6 +175,16 @@ int initFile(char *fileName, int rle,int nBlocos)
     return r;
 }
 
+void endFile(char *filename){
+    FILE *fp = fopen(filename, "a");
+    
+    if(fp)
+    {
+        fprintf(fp, "@0");
+        fclose(fp);    
+    }
+}
+
 int moduloT(char *fileName)
 {
     int i;
@@ -191,8 +200,7 @@ int moduloT(char *fileName)
     nBlocos = nBlocosInit = atoi(seekFromFile(fp, '@'));
     fseek(fp, 1, -1);
     // está na posição @<R|N>@[*]@[*]@fp
-    if (!rle)
-    {
+    
         while (nBlocos > 0)
         {
             tabFreq = NULL;
@@ -213,17 +221,27 @@ int moduloT(char *fileName)
             seekFromFile(fp, '@');
             encode(tabFreq, simbolosNaoNulos, size);
             // showAsciiFreq(tabFreq);
-            if (nBlocosInit == nBlocos)
-                initFile("ficheiro.txt.cod", rle, nBlocosInit);
-            // printf("::::::::::::::: :::::::::::::::\n");
-            escreveFicheiro(tabFreq, totalFrequencias, "ficheiro.txt.cod");
-            nBlocos--;
+            if(!rle){
+                if (nBlocosInit == nBlocos)
+                    initFile("ficheiro.txt.cod", rle, nBlocosInit);
+                    escreveFicheiro(tabFreq, totalFrequencias, "ficheiro.txt.cod");
+                    nBlocos--;
+            }
+
+            else{
+                if (nBlocosInit == nBlocos)
+                    initFile("ficheiro.txt.rle.cod", rle, nBlocosInit);
+                    escreveFicheiro(tabFreq, totalFrequencias, "ficheiro.txt.rle.cod");
+                    nBlocos--;
+            }
+            
         }
-    }
-    else
-    {
-        //outra merda
-    }
+        if(!rle)
+            endFile("ficheiro.txt.cod");
+
+        else 
+            endFile("ficheiro.txt.rle.cod");
+
     fclose(fp);
     return 0;
 }

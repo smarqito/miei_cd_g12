@@ -128,13 +128,19 @@ int escreveFicheiro(AsciiFreq sfreq, int totalFrequencias, char *fileName);
 int initFile(char *fileName, int rle, int nBlocos);
 
 /**
+ * @brief Imprime no ficheiro .cod as informações finais (@0)
+ * 
+ * @param filename String com o nome do ficheiro .cod a ser criado 
+ */
+void endFile(char *filenmame);
+
+/**
  * @brief Percorre o ficheiro e calcula a representação de cada símbolo (para cada frequência)
  * 
  * @param fileName Ficheiro do tipo .freq ou .rle.freq que vai ser lido 
  * 
  * @return 0, caso tudo corra bem 
  */ 
-
 int moduloT (char *fileName);
 
 #endif
