@@ -20,7 +20,8 @@ void setBytes(SFCodes,int);
 int getBytes(SFCodes);
 char* getCodeSF(SFCodes,char);
 void setCodeSF(SFCodes,int,char*);
-void addBits_bloco(SFCodes,char*);
+void addBitsS_bloco(SFCodes,char*);
+void addBitsI_bloco(SFCodes,int);
 int getBits_bloco(SFCodes);
 float getCompression_bloco(SFCodes);
 

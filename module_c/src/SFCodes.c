@@ -65,9 +65,14 @@ void setCodeSF(SFCodes bloco, int index, char* code)
     bloco->codes[index] = strdup(code);
 }
 
-void addBits_bloco(SFCodes bloco, char* code)
+void addBitsS_bloco(SFCodes bloco, char* code)
 {
     bloco->nBits_compressed += strlen(code);
+}
+
+void addBitsI_bloco(SFCodes bloco,int bits)
+{
+    bloco->nBits_compressed += bits;
 }
 
 int getBits_bloco(SFCodes bloco)
