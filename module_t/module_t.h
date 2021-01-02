@@ -20,7 +20,8 @@
 typedef struct SAsciiFreq {
     int ascii_valor; //!< @var ascii_valor Valor em decimal do símbolo lido
     int ascii_freq; //!< @var ascii_freq Valor da frequência desse símbolo
-    char representa[10]; //!< @var representa Array para gurdar a codificação do símbolo
+    char *representa; //!< @var representa Array para gurdar a codificação do símbolo
+    int tamanhoRepresenta;
     struct SAsciiFreq *prox; //!< @var prox Apontador para a próxima lista 
 } Nodo, *AsciiFreq;
 
