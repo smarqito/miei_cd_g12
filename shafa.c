@@ -70,14 +70,16 @@ int main(int argc, char *argv[])
                 // call module f
                 // must output .rle file
                 // @rle
-                moduleF(byteDimension, forceRLE, fileToOpen);
+                // TODO: módulo f em falta.
+                // moduleF(byteDimension, forceRLE, fileToOpen);
+                /*
                 printf("I'm on module: \"-m f\"\n");
                 printf("ForceRLE?: %s\n", forceRLE ? "Sim" : "Não");
                 printf("Tamanho: %cbytes\n", byteDimension);
+                */
                 break;
             case 't':
                 // call module t
-                printf("before call moduloT\n");
                 moduloT(fileToOpen);
                 // must output .cod file
                 // @cod
