@@ -67,7 +67,7 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
     if (filename == NULL || *filename == 0) fp = fp_in;
     else
     { fp = fopen(filename, "rb");
-      if (fp == NULL) return (FSIZE_ERROR_IN_FILE);
+        if (fp == NULL) return (FSIZE_ERROR_IN_FILE);
     }
 
     fseek_error = fseek(fp, 0L, SEEK_SET);
@@ -76,14 +76,16 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
     fseek_error = fseek(fp, 0L, SEEK_END);
     if (!fseek_error)
     { total = ftell(fp);
-      if (total == FSIZE_ERROR_IN_FTELL) return (FSIZE_ERROR_IN_FILE);
-      n_blocks = total/block_size;
-      if (n_blocks*block_size == total) *size_of_last_block = block_size;
-      else
-      { *size_of_last_block = total - n_blocks*block_size;
-        n_blocks++;
-      }
-      return(n_blocks);
+        if (total == FSIZE_ERROR_IN_FTELL) return (FSIZE_ERROR_IN_FILE);
+        n_blocks = total/block_size;
+        if (n_blocks*block_size == total) *size_of_last_block = block_size;
+        else
+        { *size_of_last_block = total - n_blocks*block_size;
+            n_blocks++;
+        }
+        fseek_error = fseek(fp, 0L, SEEK_SET);
+        if (fseek_error) return (FSIZE_ERROR_IN_FILE);
+        else return(n_blocks);
     }
 
     n_blocks = FSIZE_MAX_SIZE_FSEEK/block_size-1; // In reality fseek() can't handle FSIZE_MAX_SIZE_FSEEK of 2GBytes, so let's use a smaller size
@@ -93,7 +95,7 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
     temp_buffer = malloc(sizeof(unsigned char)*block_size);
     do
     { n_blocks++;
-      n_read = fread(temp_buffer, sizeof(unsigned char), block_size, fp);
+        n_read = fread(temp_buffer, sizeof(unsigned char), block_size, fp);
     } while (n_read == block_size && n_blocks <= FSIZE_MAX_NUMBER_OF_BLOCKS);
 
     free(temp_buffer);
@@ -101,13 +103,13 @@ long long fsize(FILE *fp_in, unsigned char *filename, unsigned long *the_block_s
 
     if (n_read == 0L)
     { *size_of_last_block = block_size;
-      n_blocks--;
+        n_blocks--;
     }
     else *size_of_last_block = n_read;
 
     if (filename == NULL || *filename == 0)
     { fseek_error = fseek(fp, 0L, SEEK_SET);
-      if (fseek_error) return (FSIZE_ERROR_IN_FILE);
+        if (fseek_error) return (FSIZE_ERROR_IN_FILE);
     }
     else fclose(fp);
 
