@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 #include "module_t.h"
+
 
 void printAuthor(int blocos)
 {
@@ -193,6 +195,8 @@ void endFile(char *filename)
 
 int moduloT(char *fileName)
 {
+    double timeSpent = 0.0;
+    clock_t begin = clock();
     int i, erro;
     int symbolFreq;
     char t;
@@ -241,6 +245,11 @@ int moduloT(char *fileName)
         nBlocos--;
     }
     endFile(outputFileName);
+    clock_t end = clock();
+    timeSpent += (double) (end-begin) / CLOCKS_PER_SEC;
+
+    printf("Tempo de execução: %f s\n", timeSpent);
+
     printf("Path para o ficheiro gerado: %s\n", outputFileName);
 
     if(erro){
@@ -249,5 +258,6 @@ int moduloT(char *fileName)
     }
 
     fclose(fp);
+
     return 0;
 }
