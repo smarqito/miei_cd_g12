@@ -180,6 +180,9 @@ void freqR (FILE *file, FILE *RLE, int force, long long blockNum, unsigned long 
     }
 
     for (int i = 1; i <= blockNum; ++i) {
+        if (blockNum == i)
+            blockSize = lastBlock;
+        
         while (count <= blockSize) {
             fread(&current, sizeof(char), 1, RLE);
 
