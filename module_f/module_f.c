@@ -4,129 +4,156 @@
 #include "fsize.h"
 #include "SFCodes.h"
 
-
-// Start of Block stuff
-struct blockList {
-    int blockNum;
-    char symbol;
-    struct blockList* next;
-};
-
-void insertList (int block, char symbol, struct blockList* head) {
-    struct blockList* new =  (struct blockList*)malloc(sizeof(struct blockList));
-    struct blockList* temp;
-    temp = head;
-
-    new->blockNum = block;
-    new->symbol = symbol;
-    new->next = NULL;
-
-    while(temp->next != NULL && temp != NULL)
-        temp = temp->next;
-
-    temp->next = new;
-}
-
-void trim (struct blockList* head){
-    struct blockList *current, *prev;
-
-    current = head;
-    prev = head;
-
-    while(current->next != NULL) {  // Find End file symbol
-        prev = current;
-        current = current->next;
-    }
-
-    if(current == head) {
-        head = NULL;
-    } else {
-        prev->next = NULL;  // Delete end file symbol
-    }
-
-    free(current);  // Free Last symbol memory
-}
-//End of the block stuff
-
-void rle (FILE *file, unsigned char *block){  //TODO Comments
-    unsigned char sym = block[0];
+void rle (unsigned char *filename, char *fileStr){ 
+    int i = 1;
     int sCount = 1;
-    int i = 1, special = 0;
+    int special = 0;
+    char sym = fileStr[0];
+    char amount[12];
+    char *newFilename = (char *) malloc(strlen(filename)+4);
+    strcpy(newFilename, filename);
+    strcat(newFilename, ".rle");
+    FILE *rle = fopen(newFilename, "wb");
 
-    if (sym == '{' && block[1] == '0' && block[2] == '}'){
+    if (sym == '{' && fileStr[1] == '0' && fileStr[2] == '}'){
         i = 3;
-        sym = '0';
         special = 1;
     }
 
-    for (i; i < strlen(block); ++i) {
-        if (block[i] == '{' && block[i+1] == '0' && block[i+2] == '}'){
-            if (sCount > 3 && special != 1) {
-                fwrite("{0}{", sizeof(unsigned char), strlen("{0}{"), file);
-                fwrite(&sym, sizeof(char), 1, file);
-                fwrite("}{", sizeof(unsigned char), strlen("}{"), file);
-                fprintf(file, "%d", sCount);
-                fwrite("}", sizeof(unsigned char), strlen("}"), file);
-                sCount = 0;
-            } else if (sCount < 4 && special != 1){
-                for (int j = 0; j < sCount; j++)
-                    fwrite(&sym, sizeof(char), 1, file);
+    while (i < strlen(fileStr)) {
+        if (sym == '{' && fileStr[i-1] == '{' && fileStr[i] == '0' && fileStr[i+1] == '}'){
+            if (special != 1) {
+                special = 1;
                 sCount = 0;
             }
 
-            sym = '0';
-            special = 1;
-
-            while (block[i] == '{' && block[i+1] == '0' && block[i+2] == '}') {
+            while (fileStr[i-1] == '{' && fileStr[i] == '0' && fileStr[i+1] == '}') {
                 sCount++;
                 i += 3;
             }
+
+            i -= 1;
         }
 
         if (special == 1){
-            fwrite("{0}{", sizeof(unsigned char), strlen("{0}{"), file);
-            fwrite(&sym, sizeof(char), 1, file);
-            fwrite("}{", sizeof(unsigned char), strlen("}{"), file);
-            fprintf(file, "%d", sCount);
-            fwrite("}", sizeof(unsigned char), strlen("}"), file);
-            sym = block[i];
+            sprintf(amount, "%d", sCount);
+
+            fwrite("{0}{0}", sizeof(unsigned char), strlen("{0}{0}"), rle);
+            fwrite("{", sizeof(unsigned char), strlen("{"), rle);
+            fwrite(amount, sizeof(char), strlen(amount), rle);
+            fwrite("}", sizeof(unsigned char), strlen("}"), rle);
+
+            sym = fileStr[i];
             sCount = 1;
             special = 0;
-        } else if (block[i] != sym && sCount > 3) {
-            fwrite("{0}{", sizeof(unsigned char), strlen("{0}{"), file);
-            fwrite(&sym, sizeof(char), 1, file);
-            fwrite("}{", sizeof(unsigned char), strlen("}{"), file);
-            fprintf(file, "%d", sCount);
-            fwrite("}", sizeof(unsigned char), strlen("}"), file);
-            sym = block[i];
+        } else if (fileStr[i] != sym && sCount > 3) {
+            sprintf(amount, "%d", sCount);
+
+            fwrite("{0}", sizeof(unsigned char), strlen("{0}"), rle);
+            fwrite(&sym, sizeof(char), 1, rle);
+            fwrite("{", sizeof(unsigned char), strlen("{"), rle);
+            fwrite(amount, sizeof(char), strlen(amount), rle);
+            fwrite("}", sizeof(unsigned char), strlen("}"), rle);
+
+            sym = fileStr[i];
             sCount = 1;
-        } else if (block[i] != sym && sCount < 4) {
+        } else if (fileStr[i] != sym && sCount < 4) {
             for (int j = 0; j < sCount; j++)
-                fwrite(&sym, sizeof(char), 1, file);
-            sym = block[i];
+                fwrite(&sym, sizeof(char), 1, rle);
+
+            sym = fileStr[i];
             sCount = 1;
         } else
             sCount++;
+
+        i++;
     }
+
+    if (special == 1){
+        sprintf(amount, "%d", sCount);
+
+        fwrite("{0}{0}", sizeof(unsigned char), strlen("{0}{0}"), rle);
+        fwrite("{", sizeof(unsigned char), strlen("{"), rle);
+        fwrite(amount, sizeof(char), strlen(amount), rle);
+        fwrite("}", sizeof(unsigned char), strlen("}"), rle);
+
+        sym = fileStr[i];
+        sCount = 1;
+        special = 0;
+    } else if (fileStr[i] != sym && sCount > 3) {
+        sprintf(amount, "%d", sCount);
+
+        fwrite("{0}", sizeof(unsigned char), strlen("{0}"), rle);
+        fwrite(&sym, sizeof(char), 1, rle);
+        fwrite("{", sizeof(unsigned char), strlen("{"), rle);
+        fwrite(amount, sizeof(char), strlen(amount), rle);
+        fwrite("}", sizeof(unsigned char), strlen("}"), rle);
+
+        sym = fileStr[i];
+        sCount = 1;
+    } else if (fileStr[i] != sym && sCount < 4) {
+        for (int j = 0; j < sCount; j++)
+            fwrite(&sym, sizeof(char), 1, rle);
+
+        sym = fileStr[i];
+        sCount = 1;
+    }
+
+    fclose(rle);
 }
 
 // <Freq Stuff>
 
-void freqN (unsigned char* block, int blockNum, int blockSize, FILE *file){
-    int symbs[255] = {0};
+void freqN (long long blockNum, unsigned long blockSize, long lastBlock, char* filename){
+    int bNum = 1;
+    unsigned char current;
+    char *newFilename = (char *) malloc(strlen(filename)+5);
+    strcpy(newFilename, filename);
+    strcat(newFilename, ".freq");
+    FILE *ogFile = fopen(filename, "rb");
+    FILE *freq = fopen(newFilename, "w");
 
-    for (int i = 0; i < strlen(block); ++i)
-        symbs[block[i]]++;
-
-    fprintf(file, "@%d@", blockSize);
-
-    for (int i = 0; i < 255; i++) {
-        if (i == 0 || symbs[i] != symbs[i-1]) {
-            fprintf(file, "%d;", symbs[i]);
-        } else {
-            fprintf(file, ";");
-        }
+    if (lastBlock < 1024 && blockNum > 1) {
+        blockNum -= 1;
+        lastBlock += blockSize;
     }
+
+    fprintf(freq, "@N@%lld", blockNum);
+
+    while (bNum <= blockNum) {
+        int symbs[255] = {0};
+
+        if (bNum == blockNum)
+            fprintf(freq, "@%ld@", lastBlock);
+        else
+            fprintf(freq, "@%ld@", blockSize);
+
+        if (bNum == blockNum)
+            for (int i = 1; i <= lastBlock; i++) {
+                fread(&current, sizeof(unsigned char), 1, ogFile);
+                symbs[current]++;
+            }
+        else
+            for (int i = 1; i <= blockSize; i++) {
+                fread(&current, sizeof(unsigned char), 1, ogFile);
+                symbs[current]++;
+            }
+
+        for (int i = 0; i < 255; i++) {
+            if (i == 0 || symbs[i] != symbs[i-1]) {
+                fprintf(freq, "%d;", symbs[i]);
+            } else {
+                fprintf(freq, ";");
+            }
+        }
+
+        bNum++;
+    }
+
+    fprintf(freq, "@0");
+
+    fclose(ogFile);
+    fclose(freq);
 }
 
 void freqR (FILE *file, FILE *RLE, int force, long long blockNum, unsigned long blockSize, unsigned long lastBlock){  //TODO THE CHECK IF RLE IS NOT FORCED
@@ -214,46 +241,19 @@ void *moduleF(char bSize, int forceRLE, unsigned char *filename){
         // Main Vars
         long last_Block_Size = 0;
         long long n_blocks = fsize(NULL, filename, &blockSize, &last_Block_Size);
-        unsigned char c;
-        int bCount = 1;
-        int sCount = 1;
+        fseek(file, 0, SEEK_END);
+        long fileSize = ftell(file);
+        rewind(file);
+        char *fileStr = malloc(fileSize+1);
+        fileStr[fileSize] = '\0';
 
-        char *newFileName = (char *) malloc(strlen(filename)+9);
-        strcpy(newFileName, filename);
-        strcat(newFileName, ".rle");
-        FILE *rleFile = fopen(newFileName, "wb+");
+        fread(fileStr, 1, fileSize, file);
 
-        strcpy(newFileName, filename);
-        strcat(newFileName, ".freq");
-        FILE *ogFreq = fopen(newFileName, "w");
-
-        strcpy(newFileName, filename);
-        strcat(newFileName, ".rle");
-        strcat(newFileName, ".freq");
-        FILE *rleFreq = fopen(newFileName, "w");
-
-        fprintf(ogFreq, "@N@%d", n_blocks);
-
-        for (int i = 1; i <= n_blocks; ++i) {
-            if (n_blocks == i)
-                blockSize = last_Block_Size;
-
-            unsigned char block[blockSize+1];
-            fread(&block, sizeof(char), blockSize, file);
-            block[blockSize] = '\0';
-
-            rle(rleFile, block);
-            freqN(block, i, blockSize, ogFreq);
-        }
-
-        freqR(rleFreq, rleFile, forceRLE, n_blocks, blockSize, last_Block_Size);
-
-        fprintf(ogFreq, "@0");
-
-        fclose(ogFreq);
-        fclose(rleFile);
-        fclose(rleFreq);
         fclose(file);
+
+        freqN(n_blocks, blockSize, last_Block_Size, filename);
+        rle(filename, fileStr);
+        freqR(filename, n_blocks, blockSize, last_Block_Size);
 
     } else
         printf("File not found");
