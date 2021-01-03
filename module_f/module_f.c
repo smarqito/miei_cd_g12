@@ -7,8 +7,8 @@
 // <RLE Stuff>
 
 void rle (unsigned char *filename, char *fileStr, unsigned long blockSize){  //TODO Comments
-    int i = 1;
-    int sCount = 1;
+    int i = 0;
+    int sCount = 0;
     int special = 0;
     char sym = fileStr[0];
     char amount[12];
@@ -18,23 +18,34 @@ void rle (unsigned char *filename, char *fileStr, unsigned long blockSize){  //T
     FILE *rle = fopen(newFilename, "wb");  //Creating RLE File
 
     if (sym == '{' && fileStr[1] == '0' && fileStr[2] == '}'){
-        i = 4;
+        i = 3;
         special = 1;
     }
 
     while (i < strlen(fileStr)) {
-        if (sym == '{' && fileStr[i-1] == '{' && fileStr[i] == '0' && fileStr[i+1] == '}'){
-            if (special != 1) {
+        if (fileStr[i] == '{' && fileStr[i+1] == '0' && fileStr[i+2] == '}'){
+            if (sCount > 3) {
+                sprintf(amount, "%d", sCount);
+
+                fwrite("{0}", sizeof(unsigned char), strlen("{0}"), rle);
+                fwrite(&sym, sizeof(char), 1, rle);
+                fwrite("{", sizeof(unsigned char), strlen("{"), rle);
+                fwrite(amount, sizeof(char), strlen(amount), rle);
+                fwrite("}", sizeof(unsigned char), strlen("}"), rle);
+                special = 1;
+                sCount = 0;
+            } else if (sCount < 4) {
+                for (int j = 0; j < sCount; j++)
+                    fwrite(&sym, sizeof(char), 1, rle);
+
                 special = 1;
                 sCount = 0;
             }
 
-            while (fileStr[i-1] == '{' && fileStr[i] == '0' && fileStr[i+1] == '}') {
+            while (fileStr[i] == '{' && fileStr[i+1] == '0' && fileStr[i+2] == '}') {
                 sCount++;
                 i += 3;
             }
-
-            i -= 1;
         }
 
         if (special == 1){
@@ -80,8 +91,6 @@ void rle (unsigned char *filename, char *fileStr, unsigned long blockSize){  //T
         fwrite("}", sizeof(unsigned char), strlen("}"), rle);
 
         sym = fileStr[i];
-        sCount = 1;
-        special = 0;
     } else if (fileStr[i] != sym && sCount > 3) {
         sprintf(amount, "%d", sCount);
 
@@ -92,13 +101,11 @@ void rle (unsigned char *filename, char *fileStr, unsigned long blockSize){  //T
         fwrite("}", sizeof(unsigned char), strlen("}"), rle);
 
         sym = fileStr[i];
-        sCount = 1;
     } else if (fileStr[i] != sym && sCount < 4) {
         for (int j = 0; j < sCount; j++)
             fwrite(&sym, sizeof(char), 1, rle);
 
         sym = fileStr[i];
-        sCount = 1;
     }
 
     fclose(rle);
@@ -222,7 +229,12 @@ void freqR (unsigned char *filename, long long blockNum, unsigned long blockSize
                     symbCounter += amount;
                 }
             } else {
-                fseek(RLE, -2, SEEK_CUR);
+                if (symbCounter == blockSize-2)
+                    fseek(RLE, -1, SEEK_CUR);
+                else if (symbCounter == blockSize-1 || symbCounter == blockSize)
+                    fseek(RLE, 0, SEEK_CUR);
+                else
+                    fseek(RLE, -2, SEEK_CUR);
                 symb[current]++;
                 symbCounter++;
             }
@@ -247,7 +259,7 @@ void freqR (unsigned char *filename, long long blockNum, unsigned long blockSize
 
 // </Freq Stuff>
 
-void *moduleF(char bSize, int forceRLE, unsigned char *filename){
+void moduleF(char bSize, int forceRLE, unsigned char *filename){
     clock_t begin = clock();
 
     unsigned long blockSize;
