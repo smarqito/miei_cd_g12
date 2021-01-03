@@ -10,9 +10,6 @@ void rle (unsigned char *filename, char *fileStr, unsigned long blockSize){  //T
     int i = 1;
     int sCount = 1;
     int special = 0;
-
-    int check = 0;
-
     char sym = fileStr[0];
     char amount[12];
     char *newFilename = (char *) malloc(strlen(filename)+4);
@@ -21,7 +18,7 @@ void rle (unsigned char *filename, char *fileStr, unsigned long blockSize){  //T
     FILE *rle = fopen(newFilename, "wb");  //Creating RLE File
 
     if (sym == '{' && fileStr[1] == '0' && fileStr[2] == '}'){
-        i = 3;
+        i = 4;
         special = 1;
     }
 
@@ -115,13 +112,13 @@ void freqN (long long blockNum, unsigned long blockSize, long lastBlock, char* f
     int bNum = 1;
     unsigned char current;
 
-    char *newFilename = (char *) malloc(strlen(filename)+5); //String para nove nome de ficheiro
+    char *newFilename = (char *) malloc(strlen(filename)+5);
     strcpy(newFilename, filename);
     strcat(newFilename, ".freq");
-    FILE *ogFile = fopen(filename, "rb");                    // Abrir ficheiro Original
-    FILE *freq = fopen(newFilename, "w");                    // Criar ficheiro Frequencia
+    FILE *ogFile = fopen(filename, "rb");
+    FILE *freq = fopen(newFilename, "w");
 
-    if (lastBlock < 1024 && blockNum > 1) {                  // Fazer merge do ultimo bloco caso mais pequeno que 1Kb
+    if (lastBlock < 1024 && blockNum > 1) {
         blockNum -= 1;
         lastBlock += blockSize;
     }
@@ -132,7 +129,7 @@ void freqN (long long blockNum, unsigned long blockSize, long lastBlock, char* f
         if (bNum == blockNum)
             blockSize = lastBlock;
 
-        int symbs[255] = {0}; //Lista para contar numero de simblos
+        int symbs[255] = {0};
 
         fprintf(freq, "@%ld@", blockSize);
 
@@ -159,21 +156,12 @@ void freqN (long long blockNum, unsigned long blockSize, long lastBlock, char* f
 }
 
 void freqR (unsigned char *filename, long long blockNum, unsigned long blockSize, unsigned long lastBlock){
-    int  amount = 0;
-    int symbs[255] = {0};
-
+    int bNum = 1, amount;
+    unsigned char current, forwards1, forwards2;
     char *newFileName = (char *) malloc(strlen(filename)+9);
     strcpy(newFileName, filename);
     strcat(newFileName, ".rle");
     FILE *RLE = fopen(newFileName, "rb");
-    fseek(RLE, 0, SEEK_END);
-    long fileSize = ftell(RLE);
-    rewind(RLE);
-    unsigned char *fileStr = malloc(fileSize+1);
-    fileStr[fileSize] = '\0';
-    fread(fileStr, 1, fileSize, RLE);
-    fclose(RLE);
-
     strcat(newFileName, ".freq");
     FILE *file = fopen(newFileName, "w");
 
@@ -182,72 +170,79 @@ void freqR (unsigned char *filename, long long blockNum, unsigned long blockSize
         lastBlock += blockSize;
     }
 
-    fprintf(file, "@R@%lld@", blockNum);
+    fprintf(file, "@R@%lld", blockNum);
 
-    for (int i = 1; i <= blockNum; i++){
-        if (i == blockNum)
+    while (bNum <= blockNum) {
+        if (bNum == blockNum)
             blockSize = lastBlock;
 
-        fprintf(file, "%ld@", blockSize);
+        int symbCounter = 0;
+        int symb[255] = {0};
 
-        for (int j = 0; j < blockSize; ++j) {
-            if (fileStr[j] == '{' && fileStr[j+1] == '0' && fileStr[j+2] == '}') {
-                if (fileStr[j+3] == '{' && fileStr[j+4] == '0' && fileStr[j+5] == '}'){
-                    char *num = malloc(13);
-                    char *ptr;
+        fprintf(file, "@%ld@", blockSize);
+
+        while (symbCounter < blockSize){
+            fread(&current, sizeof(unsigned char), 1, RLE);
+            fread(&forwards1, sizeof(unsigned char), 1, RLE);
+            fread(&forwards2, sizeof(unsigned char), 1, RLE);
+
+            if (current == '{' && forwards1 == '0' && forwards2 == '}'){
+                char number[13];
+
+                fread(&current, sizeof(unsigned char), 1, RLE);
+                fread(&forwards1, sizeof(unsigned char), 1, RLE);
+                fread(&forwards2, sizeof(unsigned char), 1, RLE);
+
+                if (current == '{' && forwards1 == '0' && forwards2 == '}') {
                     int tmp = 0;
 
-                    j += 7;
+                    fseek(RLE, 1, SEEK_CUR);
+                    fread(&current, sizeof(unsigned char), 1, RLE);
 
-                    while (fileStr[j] != '}'){
-                        num[tmp] = (char) fileStr[j];
-                        tmp++;
-                        j++;
-                    } num[tmp] = '\0';
+                    while (current != '}') {
+                        number[tmp++] = current;
+                        fread(&current, sizeof(unsigned char), 1, RLE);
+                    } number[tmp] = '\0';
 
-                    amount = strtol(num, &ptr, 10);
-                    symbs[(unsigned char) '{'] += amount;
-                    symbs[(unsigned char) '0'] += amount;
-                    symbs[(unsigned char) '}'] += amount;
-
-                    free(num);
+                    amount = atoi(number);
+                    symb[(unsigned char) '{'] += amount;
+                    symb[(unsigned char) '0'] += amount;
+                    symb[(unsigned char) '}'] += amount;
+                    symbCounter += amount*3;
                 } else {
-                    char *num = malloc(13);
-                    char *ptr;
                     int tmp = 0;
-                    unsigned char symbol = fileStr[j+3];
 
-                    j += 5;
+                    while (forwards2 != '}') {
+                        number[tmp++] = forwards2;
+                        fread(&forwards2, sizeof(unsigned char), 1, RLE);
+                    } number[tmp] = '\0';
 
-                    while (fileStr[j] != '}'){
-                        num[tmp] = (char) fileStr[j];
-                        tmp++;
-                        j++;
-                    } num[tmp] = '\0';
-
-                    amount = strtol(num, &ptr, 10);
-                    symbs[symbol] += amount;
-
-                    free(num);
+                    amount = atoi(number);
+                    symb[current] += amount;
+                    symbCounter += amount;
                 }
-            } else
-                if (fileStr [j] != '\0')
-                    symbs[fileStr[j]]++;
+            } else {
+                fseek(RLE, -2, SEEK_CUR);
+                symb[current]++;
+                symbCounter++;
+            }
         }
 
-        for (int y = 0; y < 255; y++)
-            if (y == 0 || symbs[y] != symbs[y-1]) {
-                fprintf(file, "%d;", symbs[y]);
+        for (int i = 0; i < 255; i++) {
+            if (i == 0 || symb[i] != symb[i-1]) {
+                fprintf(file, "%d;", symb[i]);
             } else {
                 fprintf(file, ";");
             }
+        }
 
-        memset(symbs, 0, sizeof(symbs));
+        bNum++;
     }
 
     fprintf(file, "@0");
 
     fclose(file);
+    fclose(RLE);
 }
 
 // </Freq Stuff>
@@ -301,10 +296,10 @@ void *moduleF(char bSize, int forceRLE, unsigned char *filename){
         printf("[Tamanho dos blocos analisados no ficheiro original: %ld/%ld]\n", blockSize, last_Block_Size);
         printf("[Ficheiro RLE: %s.rle (?%% compressão)]\n", filename);
         printf("[Tempo de Execução: %f ms]\n", time_spent);
-        if (forceRLE == 1) {
+        /*if (forceRLE == 1) {
             printf("[tamanhos de todos os blocos processados no ficheiro RLE: ?/?]\n");
             printf("[Ficheiros Gerados: %s.rle, %s.freq, %s.rle.freq]\n", filename);
-        }
+        }*/
 
     } else
         printf("File not found");
