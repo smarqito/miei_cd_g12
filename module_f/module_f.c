@@ -46,7 +46,69 @@ void trim (struct blockList* head){
 
     free(current);  // Free Last symbol memory
 }
+//End of the block stuff
 
+void rle (FILE *file, unsigned char *block){  //TODO Comments
+    unsigned char sym = block[0];
+    int sCount = 1;
+    int i = 1, special = 0;
+
+    if (sym == '{' && block[1] == '0' && block[2] == '}'){
+        i = 3;
+        sym = '0';
+        special = 1;
+    }
+
+    for (i; i < strlen(block); ++i) {
+        if (block[i] == '{' && block[i+1] == '0' && block[i+2] == '}'){
+            if (sCount > 3 && special != 1) {
+                fwrite("{0}{", sizeof(unsigned char), strlen("{0}{"), file);
+                fwrite(&sym, sizeof(char), 1, file);
+                fwrite("}{", sizeof(unsigned char), strlen("}{"), file);
+                fprintf(file, "%d", sCount);
+                fwrite("}", sizeof(unsigned char), strlen("}"), file);
+                sCount = 0;
+            } else if (sCount < 4 && special != 1){
+                for (int j = 0; j < sCount; j++)
+                    fwrite(&sym, sizeof(char), 1, file);
+                sCount = 0;
+            }
+
+            sym = '0';
+            special = 1;
+
+            while (block[i] == '{' && block[i+1] == '0' && block[i+2] == '}') {
+                sCount++;
+                i += 3;
+            }
+        }
+
+        if (special == 1){
+            fwrite("{0}{", sizeof(unsigned char), strlen("{0}{"), file);
+            fwrite(&sym, sizeof(char), 1, file);
+            fwrite("}{", sizeof(unsigned char), strlen("}{"), file);
+            fprintf(file, "%d", sCount);
+            fwrite("}", sizeof(unsigned char), strlen("}"), file);
+            sym = block[i];
+            sCount = 1;
+            special = 0;
+        } else if (block[i] != sym && sCount > 3) {
+            fwrite("{0}{", sizeof(unsigned char), strlen("{0}{"), file);
+            fwrite(&sym, sizeof(char), 1, file);
+            fwrite("}{", sizeof(unsigned char), strlen("}{"), file);
+            fprintf(file, "%d", sCount);
+            fwrite("}", sizeof(unsigned char), strlen("}"), file);
+            sym = block[i];
+            sCount = 1;
+        } else if (block[i] != sym && sCount < 4) {
+            for (int j = 0; j < sCount; j++)
+                fwrite(&sym, sizeof(char), 1, file);
+            sym = block[i];
+            sCount = 1;
+        } else
+            sCount++;
+    }
+}
 
 // <Freq Stuff>
 
