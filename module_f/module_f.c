@@ -173,10 +173,13 @@ void freqR (FILE *file, FILE *RLE, int force, long long blockNum, unsigned long 
     fprintf(file, "@%ld@", blockSize);
 
     fseek(RLE, 0, SEEK_SET);
+    
+    if (lastBlock < 1024 && blockNum > 1) {
+        blockNum -= 1;
+        lastBlock += blockSize;
+    }
 
     for (int i = 1; i <= blockNum; ++i) {
-        //TODO SQUISH LAST BLOCK IF SMALLER THEN 1Kb
-
         while (count <= blockSize) {
             fread(&current, sizeof(char), 1, RLE);
 
