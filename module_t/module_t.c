@@ -95,11 +95,11 @@ valoresGrupo divideStruct(AsciiFreq sfreq, int totalSimbolos)
     return valores;
 }
 
-AsciiFreq representa(AsciiFreq sfreq, char valor, int div)
+AsciiFreq representa(AsciiFreq sfreq, char valor, int simbNaoNulos)
 {
     AsciiFreq pt = sfreq;
     int i;
-    while (div > 0)
+    while (simbNaoNulos > 0)
     {
         for (i = 0; pt->representa[i]; i++)
             ;
@@ -112,22 +112,22 @@ AsciiFreq representa(AsciiFreq sfreq, char valor, int div)
         pt->representa[i] = valor;
         pt->representa[i + 1] = '\0';
         pt = pt->prox;
-        div--;
+        simbNaoNulos--;
     }
     return pt;
 }
 
-void encode(AsciiFreq sfreq, int div, int totalSimbolos)
+void encode(AsciiFreq sfreq, int simbNaoNulos, int totalSimbolos)
 {
     valoresGrupo d;
     AsciiFreq pt;
-    if (div > 1)
+    if (simbNaoNulos > 1)
     {
         d = divideStruct(sfreq, totalSimbolos);
         pt = representa(sfreq, '0', d.nElementos);
         encode(sfreq, d.nElementos, d.nSimbolos);
-        representa(pt, '1', div - d.nElementos);
-        encode(pt, div - d.nElementos, totalSimbolos - d.nSimbolos);
+        representa(pt, '1', simbNaoNulos - d.nElementos);
+        encode(pt, simbNaoNulos - d.nElementos, totalSimbolos - d.nSimbolos);
     }
 }
 
