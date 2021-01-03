@@ -6,7 +6,7 @@
 
 // <RLE Stuff>
 
-void rle (unsigned char *filename, char *fileStr, unsigned long blockSize){  //TODO Comments
+void rle (unsigned char *filename, char *fileStr){
     int i = 0;
     int sCount = 0;
     int special = 0;
@@ -296,7 +296,7 @@ void moduleF(char bSize, int forceRLE, unsigned char *filename){
         fclose(file);
 
         freqN(n_blocks, blockSize, last_Block_Size, filename);
-        rle(filename, fileStr, blockSize);
+        rle(filename, fileStr);
         freqR(filename, n_blocks, blockSize, last_Block_Size);
 
         clock_t end = clock();
