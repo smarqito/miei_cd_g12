@@ -4,6 +4,50 @@
 #include "fsize.h"
 #include "SFCodes.h"
 
+
+// Start of Block stuff
+struct blockList {
+    int blockNum;
+    char symbol;
+    struct blockList* next;
+};
+
+void insertList (int block, char symbol, struct blockList* head) {
+    struct blockList* new =  (struct blockList*)malloc(sizeof(struct blockList));
+    struct blockList* temp;
+    temp = head;
+
+    new->blockNum = block;
+    new->symbol = symbol;
+    new->next = NULL;
+
+    while(temp->next != NULL && temp != NULL)
+        temp = temp->next;
+
+    temp->next = new;
+}
+
+void trim (struct blockList* head){
+    struct blockList *current, *prev;
+
+    current = head;
+    prev = head;
+
+    while(current->next != NULL) {  // Find End file symbol
+        prev = current;
+        current = current->next;
+    }
+
+    if(current == head) {
+        head = NULL;
+    } else {
+        prev->next = NULL;  // Delete end file symbol
+    }
+
+    free(current);  // Free Last symbol memory
+}
+
+
 // <Freq Stuff>
 
 void freqN (unsigned char* block, int blockNum, int blockSize, FILE *file){
