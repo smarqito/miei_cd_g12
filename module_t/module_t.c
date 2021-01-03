@@ -193,13 +193,13 @@ void endFile(char *filename)
 
 int moduloT(char *fileName)
 {
-    int i;
+    int i, erro;
     int symbolFreq;
     char t;
     int rle, nBlocos, nBlocosInit, size;
     int simbolosNaoNulos, totalFrequencias;
     AsciiFreq tabFreq;
-    rle = size = 0;
+    rle = size = erro = 0;
     FILE *fp = fopen(fileName, "r");
     fseek(fp, 1, 1); //avança um byte no ficheiro ('@)
     rle = seekFromFile(fp, '@')[0] == 'R' ? 1 : 0;
@@ -228,12 +228,8 @@ int moduloT(char *fileName)
                 tabFreq = snoc(tabFreq, i, symbolFreq);
             }
         }
-        if (size != totalFrequencias)
-        {
-            printf("\n:::::: ERRO DE COMPRESSÃO :::::: \n");
-            printf("O tamanho do bloco difere do total de frequências dos símbolos!\n");
-            return 1;
-        }
+        if (size != totalFrequencias) erro = 1;
+
         seekFromFile(fp, '@');
         encode(tabFreq, simbolosNaoNulos, totalFrequencias);
 
@@ -246,6 +242,11 @@ int moduloT(char *fileName)
     }
     endFile(outputFileName);
     printf("Path para o ficheiro gerado: %s\n", outputFileName);
+
+    if(erro){
+        printf("\n:::::: Atenção! :::::: \n");
+        printf("Existe pelo menos um bloco cujo tamanho difere do total de frequências dos símbolos!\n\n");
+    }
 
     fclose(fp);
     return 0;
