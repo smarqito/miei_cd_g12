@@ -2,6 +2,7 @@
 #include<unistd.h>
 #include<sys/types.h>
 #include<sys/stat.h>
+#include<sys/wait.h>
 #include<fcntl.h>
 
 int getRleBuffer(char* rleFile,char** buffer)
@@ -20,7 +21,7 @@ int getRleBuffer(char* rleFile,char** buffer)
     bufferSize = rleInfo->st_size;
     free(rleInfo);
 
-    *buffer = (char*) malloc( sizeof(char)*bufferSize + 1 );
+    *buffer = (char*) malloc( sizeof(char)*(bufferSize + 1) );
     
     if(!(*buffer)) return -1;
 
@@ -32,13 +33,15 @@ int getRleBuffer(char* rleFile,char** buffer)
 
 int isRleCompression(char* rleBuffer,int index,int size)
 {
-    return rleBuffer[index]=='{' && index+2<size && rleBuffer[index+2]=='}';
+    return rleBuffer[index]=='{' && index+2<size && rleBuffer[index+1]=='0' && rleBuffer[index+2]=='}';
 }
 
 int encodeSymbol(SFCodes bloco,char symbol,char* shafaBuffer,int* shafaIndex)
 {
     char* code = NULL;
     int bitLen = 0;
+
+    printf("\n\nargs: %d %d\n",(int)symbol,*shafaIndex);
 
     shafaBuffer[(*shafaIndex)++] = '(';
     shafaBuffer[*shafaIndex] = '\0';
@@ -55,14 +58,23 @@ int encodeSymbol(SFCodes bloco,char symbol,char* shafaBuffer,int* shafaIndex)
     return bitLen;
 }
 
-int encodeRle(SFCodes bloco,char* rleBuffer,int* rleIndex,char* shafaBuffer,int* shafaIndex,int* encodedBits)
+int encodeRle(int* bytesRead,SFCodes bloco,char* rleBuffer,int* rleIndex,char* shafaBuffer,int* shafaIndex,
+                int* encodedBits,int bytesBloco,int bytesCount)
 {
-    int times=0,isZeroByte=0,bytesRead;
-    char c,*code;
+    int times=0;
+    char *code;
+    static int overByted = 0, isZeroByte = 0;
+    static char c;
+    
+    printf("overbyted %d | isZeroByte %d\n",overByted,isZeroByte);
 
     (*rleIndex) += 3;
 
-    if(rleBuffer[*rleIndex]=='{')
+    if(overByted)
+    {
+        (*rleIndex) -= 3;
+    }
+    else if(rleBuffer[*rleIndex]=='{')
     {
         (*rleIndex) += 4;
         isZeroByte=1;
@@ -71,10 +83,26 @@ int encodeRle(SFCodes bloco,char* rleBuffer,int* rleIndex,char* shafaBuffer,int*
     {
         c = rleBuffer[*rleIndex];
         (*rleIndex) += 2;
+        isZeroByte=0;
+    }
+    
+    if(overByted)
+    {
+        times = overByted;
+        overByted = 0;
+    }
+    else
+        sscanf(rleBuffer+(*rleIndex),"%d",&times);
+    
+    bytesCount += times;
+    
+    if(bytesCount>bytesBloco)
+    {
+        times = bytesBloco - (bytesCount-times);
+        overByted += bytesCount-bytesBloco;
     }
 
-    sscanf(rleBuffer+(*rleIndex),"%d",&times);
-    bytesRead = times;
+    *bytesRead += times;
 
     while(times)
     {
@@ -101,52 +129,73 @@ int encodeRle(SFCodes bloco,char* rleBuffer,int* rleIndex,char* shafaBuffer,int*
         
         times--;
     }
-
-    while(rleBuffer[*rleIndex-1]!='}')
-        (*rleIndex)++;
-
-    return bytesRead;
+    
+    if(!overByted)
+        while(rleBuffer[*rleIndex-1]!='}')
+            (*rleIndex)++;
+    
+    return overByted;
 }
 
-int writeShafaFile(char* codFile,char* rleFile)
+int writeShafaFile(SFCodes* sfBlocos,int nBlocos,char* rleBuffer,int rleBytes,char* rleFile)
 {
-    char* rleBuffer = NULL,*shafaBuffer=NULL,*code=NULL,*filename;
-    int rleBytes,bytesRead=0,nBlocos=0,shafaIndex,rleIndex,blocoAtual,encodedBits=0;
-    SFCodes* sfBlocos = NULL;
-    char c;
+    char* shafaBuffer=NULL,*code=NULL,*filename;
+    int bytesRead=0,shafaIndex,rleIndex,blocoAtual,encodedBits=0,bytesBlocoMaior,isOverByted=0;
+    char c,sizeBloco[15];
     int shafFD;
 
-    if(!codFile || !rleFile) return 0;
+    sizeBloco[0] = '\0';
 
-    nBlocos = readCodFile(&sfBlocos,codFile);
-
-    if(!nBlocos) return -1;
-
-    rleBytes = getRleBuffer(rleFile,&rleBuffer) - 1 ; // -1 cause '\0' fim de string
-    
-    if(!rleBytes)
+    bytesBlocoMaior = getBytes(sfBlocos[0]);
+    for(blocoAtual=1;blocoAtual<nBlocos;blocoAtual++)
     {
-        for(;!nBlocos;nBlocos--)
-            freeSFCodes(sfBlocos[nBlocos-1]);
-        
-        return -2;
+        if( getBytes(sfBlocos[blocoAtual]) > bytesBlocoMaior )
+            bytesBlocoMaior = getBytes(sfBlocos[blocoAtual]);
     }
-    
-    shafaBuffer = (char*) malloc( sizeof(char)*rleBytes*8 );
+
+    shafaBuffer = (char*) malloc( sizeof(char)*bytesBlocoMaior*15 );
     shafaBuffer[0] = '\0';
 
-    for(blocoAtual=0,shafaIndex=0,rleIndex=0 ; rleBuffer[rleIndex]!='\0' ; )
+    filename = (char*) malloc( sizeof(char)*(strlen(rleFile)+6) );
+    filename[0] = '\0';
+    strcat(filename,rleFile);
+    strcat(filename,"shaf"); //////////// RETIRADO O PONTO PARA TESTES
+
+    shafFD = open(filename,O_CREAT | O_WRONLY | O_TRUNC, 0666);
+    
+    sprintf(sizeBloco,"@%d",nBlocos);
+
+    write(shafFD,sizeBloco,strlen(sizeBloco));
+    sizeBloco[0] = '\0';
+    
+    for(blocoAtual=0,shafaIndex=0,rleIndex=0 ; ; )
     {
+        printf("\nbloco num %d\n",blocoAtual);
+
         if(bytesRead==getBytes(sfBlocos[blocoAtual]))
         {
             addBitsI_bloco(sfBlocos[blocoAtual],encodedBits);
+
+            sprintf(sizeBloco,"@%d",bytesRead,blocoAtual);
+            write(shafFD,sizeBloco,strlen(sizeBloco));
+            sizeBloco[0] = '\0';
+
+            write(shafFD,shafaBuffer,shafaIndex);
+
+            shafaBuffer[0] = '\0';
+            shafaIndex = 0;
+
             bytesRead = encodedBits = 0;
             blocoAtual++;
+
+            if(blocoAtual==nBlocos)
+                break;
         }
         
-        if( isRleCompression(rleBuffer,rleIndex,rleBytes) )
+        if( isRleCompression(rleBuffer,rleIndex,rleBytes) || isOverByted )
         {
-            bytesRead += encodeRle(sfBlocos[blocoAtual],rleBuffer,&rleIndex,shafaBuffer,&shafaIndex,&encodedBits);
+            isOverByted = encodeRle(&bytesRead,sfBlocos[blocoAtual],rleBuffer,&rleIndex,
+                                    shafaBuffer,&shafaIndex,&encodedBits,getBytes(sfBlocos[blocoAtual]),bytesRead);
         }
         else
         {
@@ -156,14 +205,13 @@ int writeShafaFile(char* codFile,char* rleFile)
         }
     }
     
-    filename = (char*) malloc( sizeof(char)*(strlen(rleFile)+1) );
-    filename[0] = '\0';
-    strcat(filename,rleFile);
-    strcat(filename,".shaf");
+    sprintf(sizeBloco,"@0");
+    write(shafFD,sizeBloco,2);
 
-    shafFD = open(filename,O_CREAT | O_WRONLY | O_TRUNC);
-    write(shafFD,shafaBuffer,shafaIndex);
     close(shafFD);
+    
+    free(filename);
+    free(shafaBuffer);
 
     return 1;
 }

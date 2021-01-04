@@ -6,8 +6,7 @@
 int getRleBuffer(char*,char**);
 int isRleCompression(char*,int,int);
 int encodeSymbol(SFCodes,char,char*,int*);
-int encodeRle(SFCodes,char*,int*,char*,int*,int*);
-int writeShafaFile(char*,char*);
-
+int encodeRle(int*,SFCodes,char*,int*,char*,int*,int*,int,int);
+int writeShafaFile(SFCodes*,int,char*,int,char*);
 
 #endif
