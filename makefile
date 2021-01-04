@@ -31,3 +31,6 @@ RWShafa.o: ./module_c/headers/RWShafa.h ./module_c/src/RWShafa.c
 
 SFCodes.o: ./module_c/headers/SFCodes.h ./module_c/src/SFCodes.c
 	gcc -c ./module_c/src/SFCodes.c
+
+clean:
+	rm *.o 
