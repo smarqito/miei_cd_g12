@@ -248,7 +248,7 @@ char* moduloT(char *fileName)
     clock_t end = clock();
     timeSpent += (double) (end-begin) / CLOCKS_PER_SEC;
 
-    printf("Tempo de execução: %f s\n", timeSpent);
+    printf("Tempo de execução: %lf s\n", timeSpent);
 
     printf("Path para o ficheiro gerado: %s\n", outputFileName);
 

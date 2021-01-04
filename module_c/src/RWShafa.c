@@ -41,8 +41,6 @@ int encodeSymbol(SFCodes bloco,char symbol,char* shafaBuffer,int* shafaIndex)
     char* code = NULL;
     int bitLen = 0;
 
-    printf("\n\nargs: %d %d\n",(int)symbol,*shafaIndex);
-
     shafaBuffer[(*shafaIndex)++] = '(';
     shafaBuffer[*shafaIndex] = '\0';
     
@@ -66,7 +64,6 @@ int encodeRle(int* bytesRead,SFCodes bloco,char* rleBuffer,int* rleIndex,char* s
     static int overByted = 0, isZeroByte = 0;
     static char c;
     
-    printf("overbyted %d | isZeroByte %d\n",overByted,isZeroByte);
 
     (*rleIndex) += 3;
 
@@ -159,7 +156,7 @@ int writeShafaFile(SFCodes* sfBlocos,int nBlocos,char* rleBuffer,int rleBytes,ch
     filename = (char*) malloc( sizeof(char)*(strlen(rleFile)+6) );
     filename[0] = '\0';
     strcat(filename,rleFile);
-    strcat(filename,"shaf"); //////////// RETIRADO O PONTO PARA TESTES
+    strcat(filename,".shaf");
 
     shafFD = open(filename,O_CREAT | O_WRONLY | O_TRUNC, 0666);
     
@@ -170,8 +167,6 @@ int writeShafaFile(SFCodes* sfBlocos,int nBlocos,char* rleBuffer,int rleBytes,ch
     
     for(blocoAtual=0,shafaIndex=0,rleIndex=0 ; ; )
     {
-        printf("\nbloco num %d\n",blocoAtual);
-
         if(bytesRead==getBytes(sfBlocos[blocoAtual]))
         {
             addBitsI_bloco(sfBlocos[blocoAtual],encodedBits);

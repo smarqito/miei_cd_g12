@@ -4,6 +4,7 @@
 #include "./module_t/module_t.h"
 #include "./module_f/module_f.h"
 #include "./module_d/module_d.h"
+#include "./module_c/module_c.h"
 
 /*
  * Call this function:
@@ -57,12 +58,15 @@ int main(int argc, char *argv[])
 
         if (module && fileToOpen)
         {
+            char *freqFile = NULL;
             printf("File to read: \"%s\"\n", fileToOpen);
             switch (moduleType)
             {
             case 'c':
                 //call module c
-
+                freqFile = malloc(strlen(fileToOpen) * sizeof(char) + 6);
+                strcpy(freqFile, fileToOpen);
+                moduleC(moduloT(strcat(freqFile, ".freq")), fileToOpen);
                 break;
             case 'd':
                 // call module d

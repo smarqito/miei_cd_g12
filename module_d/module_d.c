@@ -58,7 +58,7 @@ int decompress(char *shafaFileName, char *codFileName)
 
 	nBlocos = readCodFile(&arraySFCodes, codFileName);
 
-
+	
 	if (!nBlocos)
 		return 0;
 
