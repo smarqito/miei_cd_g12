@@ -142,6 +142,6 @@ void endFile(char *filenmame);
  * 
  * @return 0, caso tudo corra bem 
  */ 
-int moduloT (char *fileName);
+char* moduloT (char *fileName);
 
 #endif

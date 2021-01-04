@@ -3,6 +3,7 @@
 #include <string.h>
 #include "./module_t/module_t.h"
 #include "./module_f/module_f.h"
+#include "./module_d/module_d.h"
 
 /*
  * Call this function:
@@ -54,15 +55,20 @@ int main(int argc, char *argv[])
             }
         }
 
-        if (module)
+        if (module && fileToOpen)
         {
             printf("File to read: \"%s\"\n", fileToOpen);
             switch (moduleType)
             {
+            case 'c':
+                //call module c
+
+                break;
             case 'd':
                 // call module d
                 printf("I'm on module: \"-m d\"\n");
                 printf("Options: %c\n", optimizeSF_opt == 1 ? 's' : optimizeSF_opt == 2 ? 'r' : '-');
+                decompress("./doc_teste/teste.txt.shaf", fileToOpen);
                 // must output .shaf file
                 // @shaf
                 break;
@@ -71,12 +77,12 @@ int main(int argc, char *argv[])
                 // must output .rle file
                 // @rle
                 // TODO: módulo f em falta.
-                // moduleF(byteDimension, forceRLE, fileToOpen);
-                /*
+                moduleF(byteDimension, forceRLE, fileToOpen);
+                
                 printf("I'm on module: \"-m f\"\n");
                 printf("ForceRLE?: %s\n", forceRLE ? "Sim" : "Não");
                 printf("Tamanho: %cbytes\n", byteDimension);
-                */
+                
                 break;
             case 't':
                 // call module t
@@ -88,6 +94,16 @@ int main(int argc, char *argv[])
                 printf("Reveja o comando inserido.\n");
                 break;
             }
+        } else if (fileToOpen) {
+            // int fileNameLen = strlen(fileToOpen);
+            // char *codFile;
+            // char *shafaFile;
+            // char *rleFile[fileNameLen+4];
+            // char *freqFile;
+            // freqFile = moduleF(byteDimension, forceRLE, fileToOpen);
+            // codFile = moduleT(freqFile);
+            // shafaFile = moduleC(codFile, strcat(rleFile, ".rle") );
+            // moduleD(shafaFile, codFile);
         }
     }
     return 0;

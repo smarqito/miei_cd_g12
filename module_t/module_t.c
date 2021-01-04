@@ -193,7 +193,7 @@ void endFile(char *filename)
     }
 }
 
-int moduloT(char *fileName)
+char* moduloT(char *fileName)
 {
     double timeSpent = 0.0;
     clock_t begin = clock();
@@ -259,5 +259,5 @@ int moduloT(char *fileName)
 
     fclose(fp);
 
-    return 0;
+    return outputFileName;
 }
