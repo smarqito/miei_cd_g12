@@ -54,9 +54,9 @@ int decompress(char *shafaFileName, char *codFileName)
 	int rle;
 	//verificar N ou R
 
-	SFCodes *matriz;
+	SFCodes *arraySFCodes;
 
-	nBlocos = readCodFile(&matriz, codFileName);
+	nBlocos = readCodFile(&arraySFCodes, codFileName);
 
 
 	if (!nBlocos)
