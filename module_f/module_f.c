@@ -6,8 +6,20 @@
 
 // <RLE Stuff>
 
-void rle (unsigned char *filename, char *fileStr){
+int checkCompression(int rleSize, int originalSize){
+    double compression = originalSize - rleSize;
+    compression = compression/originalSize;
+    compression = compression*100;
+
+    if (compression >= 5.00)
+        return 1;
+    else
+        return 0;
+}
+
+int rle (unsigned char *filename, char *fileStr, unsigned long blockSize, int forceRLE){
     int i = 0;
+    int firstBlockSize;
     int sCount = 0;
     int special = 0;
     char sym = fileStr[0];
@@ -79,19 +91,19 @@ void rle (unsigned char *filename, char *fileStr){
         } else
             sCount++;
 
+        if (i+1 == blockSize && forceRLE != 1) {
+            firstBlockSize = ftell(rle);
+
+            if (checkCompression(firstBlockSize, blockSize) != 1) {
+                fclose(rle);
+                remove(newFilename);
+                return 0;
+            }
+        }
         i++;
     }
 
-    if (special == 1){
-        sprintf(amount, "%d", sCount);
-
-        fwrite("{0}{0}", sizeof(unsigned char), strlen("{0}{0}"), rle);
-        fwrite("{", sizeof(unsigned char), strlen("{"), rle);
-        fwrite(amount, sizeof(char), strlen(amount), rle);
-        fwrite("}", sizeof(unsigned char), strlen("}"), rle);
-
-        sym = fileStr[i];
-    } else if (fileStr[i] != sym && sCount > 3) {
+    if (sCount > 3) {
         sprintf(amount, "%d", sCount);
 
         fwrite("{0}", sizeof(unsigned char), strlen("{0}"), rle);
@@ -101,7 +113,7 @@ void rle (unsigned char *filename, char *fileStr){
         fwrite("}", sizeof(unsigned char), strlen("}"), rle);
 
         sym = fileStr[i];
-    } else if (fileStr[i] != sym && sCount < 4) {
+    } else if (sCount < 4) {
         for (int j = 0; j < sCount; j++)
             fwrite(&sym, sizeof(char), 1, rle);
 
@@ -109,6 +121,7 @@ void rle (unsigned char *filename, char *fileStr){
     }
 
     fclose(rle);
+    return firstBlockSize;
 }
 
 // </RLE Stuff>
@@ -259,10 +272,11 @@ void freqR (unsigned char *filename, long long blockNum, unsigned long blockSize
 
 // </Freq Stuff>
 
-void moduleF(char bSize, int forceRLE, unsigned char *filename){
+char *moduleF(char bSize, int forceRLE, unsigned char *filename){
     clock_t begin = clock();
 
     unsigned long blockSize;
+    int rleUsed;
 
     switch(bSize){  //Handle block size input
         case 'K':
@@ -285,19 +299,29 @@ void moduleF(char bSize, int forceRLE, unsigned char *filename){
         // Main Vars
         long last_Block_Size = 0;
         long long n_blocks = fsize(NULL, filename, &blockSize, &last_Block_Size);
+        long long originalFileSize = n_blocks * blockSize + last_Block_Size;
         fseek(file, 0, SEEK_END);
         long fileSize = ftell(file);
         rewind(file);
         char *fileStr = malloc(fileSize+1);
         fileStr[fileSize] = '\0';
+        char *newFilename = (char *) malloc(strlen(filename)+4);
+        strcpy(newFilename, filename);
+        strcat(newFilename, ".rle");
 
         fread(fileStr, 1, fileSize, file);
 
         fclose(file);
 
         freqN(n_blocks, blockSize, last_Block_Size, filename);
-        rle(filename, fileStr);
-        freqR(filename, n_blocks, blockSize, last_Block_Size);
+
+        if (n_blocks != 1)
+            rleUsed = rle(filename, fileStr, blockSize, forceRLE);
+        else
+            rleUsed = rle(filename, fileStr, last_Block_Size, forceRLE);
+
+        if (rleUsed != 0)
+            freqR(filename, n_blocks, blockSize, last_Block_Size);
 
         clock_t end = clock();
         double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
@@ -305,14 +329,36 @@ void moduleF(char bSize, int forceRLE, unsigned char *filename){
         printf("[Tomás Dias, Mariana Marques, MIEI/CD, 03/01/2021]\n");
         printf("[Módulo: F]\n");
         printf("[Número de Blocos: %lld]\n", n_blocks);
-        printf("[Tamanho dos blocos analisados no ficheiro original: %ld/%ld]\n", blockSize, last_Block_Size);
-        printf("[Ficheiro RLE: %s.rle (?%% compressão)]\n", filename);
+
+        if (n_blocks > 1)
+            printf("[Tamanho dos blocos analisados no ficheiro original: %ld/%ld]\n", blockSize, last_Block_Size);
+        else
+            printf("[Tamanho dos blocos analisados no ficheiro original: %ld]\n", last_Block_Size);
+
         printf("[Tempo de Execução: %f ms]\n", time_spent);
-        /*if (forceRLE == 1) {
-            printf("[tamanhos de todos os blocos processados no ficheiro RLE: ?/?]\n");
-            printf("[Ficheiros Gerados: %s.rle, %s.freq, %s.rle.freq]\n", filename);
-        }*/
+        if (rleUsed != 0) {
+            n_blocks = fsize(NULL, newFilename, &blockSize, &last_Block_Size);
+            long long rleFileSize = n_blocks * blockSize + last_Block_Size;
+
+            double compression = originalFileSize - rleFileSize;
+            compression = compression/originalFileSize;
+            compression = compression*100;
+
+            printf("[Ficheiro RLE: %s.rle (%f%% compressão)]\n", filename, compression);
+            printf("[tamanhos de todos os blocos processados no ficheiro RLE: %d]\n", rleUsed);
+            printf("[Ficheiros Gerados: %s.rle, %s.freq, %s.rle.freq]\n", filename, filename, filename);
+        } else
+            printf("[Ficheiros Gerados: %s.freq]\n", filename);
 
     } else
         printf("File not found");
+
+    char *newFilename = (char *) malloc(strlen(filename)+4);
+    strcpy(newFilename, filename);
+    strcat(newFilename, ".rle");
+
+    if (rleUsed != 0)
+        return newFilename;
+    else
+        return filename;
 }
