@@ -10,7 +10,6 @@ int bitsToBytes(int bits)
 
 char* moduleC(char* codFile,char* rleFile)
 {
-    
     int nBlocos=0,rleBytes=0,i,bytesTotal=0,bitsTotal=0,bytesBloco=0,bitsBloco=0;
     SFCodes* sfBlocos = NULL;
     char* rleBuffer = NULL,*filename=NULL;
@@ -53,7 +52,7 @@ char* moduleC(char* codFile,char* rleFile)
         bitsBloco = getBits_bloco(sfBlocos[i]);
         bytesTotal += bytesBloco;
         bitsTotal += bitsBloco;
-        printf("(Bloco %d) Tamanho antes/depois %d/%d\n",i+1,bytesBloco,bitsBloco);
+        printf("(Bloco %d) Tamanho antes/depois %d/%d\n",i+1,bytesBloco,bitsToBytes(bitsBloco));
     }
 
     printf("Compressao total %d\n%",(bitsToBytes(bitsTotal)/bytesTotal)*100);

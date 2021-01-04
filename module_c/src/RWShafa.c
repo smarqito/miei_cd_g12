@@ -26,8 +26,8 @@ int getRleBuffer(char* rleFile,char** buffer)
     if(!(*buffer)) return -1;
 
     read(rleFD,*buffer,bufferSize);
-    close(rleFD);
 
+    close(rleFD);
     return bufferSize+1;
 }
 
@@ -52,7 +52,6 @@ int encodeSymbol(SFCodes bloco,char symbol,char* shafaBuffer,int* shafaIndex)
     
     shafaBuffer[(*shafaIndex)++] = ')';  
     shafaBuffer[*shafaIndex] = '\0';
-
     return bitLen;
 }
 
@@ -150,9 +149,8 @@ int writeShafaFile(SFCodes* sfBlocos,int nBlocos,char* rleBuffer,int rleBytes,ch
             bytesBlocoMaior = getBytes(sfBlocos[blocoAtual]);
     }
 
-    shafaBuffer = (char*) malloc( sizeof(char)*bytesBlocoMaior*15 );
+    shafaBuffer = (char*) malloc( sizeof(char)*bytesBlocoMaior*30 );
     shafaBuffer[0] = '\0';
-
     filename = (char*) malloc( sizeof(char)*(strlen(rleFile)+6) );
     filename[0] = '\0';
     strcat(filename,rleFile);
@@ -167,7 +165,10 @@ int writeShafaFile(SFCodes* sfBlocos,int nBlocos,char* rleBuffer,int rleBytes,ch
     
     for(blocoAtual=0,shafaIndex=0,rleIndex=0 ; ; )
     {
-        if(bytesRead==getBytes(sfBlocos[blocoAtual]))
+            // printf("bloco -> %d, bytesread -> %d, blocos totais -> %d\n", blocoAtual, bytesRead, nBlocos);
+            // printf("getBytes -> %d\n", getBytes(sfBlocos[blocoAtual]));
+            // printf("rleindex -> %d, rleBufferSize -> %d\n", rleIndex, strlen(rleBuffer));
+        if(bytesRead>=getBytes(sfBlocos[blocoAtual]))
         {
             addBitsI_bloco(sfBlocos[blocoAtual],encodedBits);
 

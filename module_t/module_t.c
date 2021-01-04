@@ -235,13 +235,13 @@ char* moduloT(char *fileName)
         if (size != totalFrequencias) erro = 1;
 
         seekFromFile(fp, '@');
-        encode(tabFreq, simbolosNaoNulos, totalFrequencias);
+        encode(tabFreq, simbolosNaoNulos, size);
 
         if (nBlocosInit == nBlocos)
             initFile(outputFileName, rle, nBlocosInit);
 
-        escreveFicheiro(tabFreq, totalFrequencias, outputFileName);
-        printf("%d%s", totalFrequencias, nBlocos == 1 ? " bytes\n" : "/");
+        escreveFicheiro(tabFreq, size, outputFileName);
+        printf("%d%s", size, nBlocos == 1 ? " bytes\n" : "/");
         nBlocos--;
     }
     endFile(outputFileName);

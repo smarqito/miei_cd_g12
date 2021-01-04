@@ -4,7 +4,7 @@ int readCodFile(SFCodes** blocosSF, char* fileName)
 {
     int nBlocos,symbol=0,sizeBloco,blocoAtual=0;
     FILE *fp = fopen(fileName,"r");
-    char codeSF[9], c;
+    char codeSF[40], c;
     int lenCodeSF = 0;
 
     if(!fp) return 0;
